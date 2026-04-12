@@ -1,0 +1,236 @@
+// Studelio — schéma Prisma (spécification produit)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  PARENT
+  CORRECTOR
+  ADMIN
+}
+
+enum Niveau {
+  SIXIEME
+  CINQUIEME
+  QUATRIEME
+  TROISIEME
+  SECONDE
+  PREMIERE
+  TERMINALE
+  BTS
+}
+
+enum Tag {
+  DYSLEXIE
+  DYSORTHOGRAPHIE
+  DYSCALCULIE
+  TDAH
+  HPI
+  TROUBLE_ANXIEUX
+}
+
+enum Plan {
+  ESSENTIEL
+  STANDARD
+  INTENSIF
+}
+
+enum SubStatus {
+  ACTIVE
+  TRIALING
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+}
+
+enum MessageRole {
+  USER
+  ANDRE
+}
+
+enum BacBlancStatus {
+  PENDING
+  SUBMITTED
+  IN_REVIEW
+  CORRECTED
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  name          String?
+  image         String?
+  password      String?
+  role          Role      @default(STUDENT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subscription       Subscription?
+  studentProfile     StudentProfile?
+  parentProfile      ParentProfile?
+  chatSessions       ChatSession[]
+  bacBlancs          BacBlanc[]       @relation("BacBlancStudent")
+  correctedBacBlancs BacBlanc[]       @relation("BacBlancCorrecteur")
+  accounts           Account[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model StudentProfile {
+  id            String  @id @default(cuid())
+  userId        String  @unique
+  user          User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  niveau        Niveau
+  interests     String[]
+  tags          Tag[]
+  parentId      String?
+  parent        ParentProfile? @relation(fields: [parentId], references: [id])
+  streakDays    Int     @default(0)
+  totalMinutes  Int     @default(0)
+  lastSessionAt DateTime?
+  errorProfile  Json    @default("{}")
+  programmeId   String?
+  programme     Programme? @relation(fields: [programmeId], references: [id])
+}
+
+model ParentProfile {
+  id               String           @id @default(cuid())
+  userId           String           @unique
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  children         StudentProfile[]
+  emailReports     Boolean          @default(true)
+  reportFrequency  String           @default("weekly")
+}
+
+model Subscription {
+  id                   String    @id @default(cuid())
+  userId               String    @unique
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stripeCustomerId     String    @unique
+  stripeSubscriptionId String?   @unique
+  stripePriceId        String?
+  plan                 Plan      @default(ESSENTIEL)
+  status               SubStatus @default(INCOMPLETE)
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean   @default(false)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+}
+
+model ChatSession {
+  id          String        @id @default(cuid())
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject     String?
+  niveau      Niveau?
+  messages    ChatMessage[]
+  attachments Attachment[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model ChatMessage {
+  id         String      @id @default(cuid())
+  sessionId  String
+  session    ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role       MessageRole
+  content    String      @db.Text
+  tokensUsed Int?
+  createdAt  DateTime    @default(now())
+}
+
+model Attachment {
+  id        String      @id @default(cuid())
+  sessionId String
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  url       String
+  type      String
+  filename  String
+  sizeBytes Int
+  createdAt DateTime    @default(now())
+}
+
+model Programme {
+  id          String             @id @default(cuid())
+  niveau      Niveau             @unique
+  title       String
+  description String?
+  chapters    ProgrammeChapter[]
+  students    StudentProfile[]
+  updatedAt   DateTime           @updatedAt
+}
+
+model ProgrammeChapter {
+  id           String    @id @default(cuid())
+  programmeId  String
+  programme    Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+  title        String
+  description  String?
+  order        Int
+  objectives   String[]
+  skills       String[]
+  systemPrompt String?   @db.Text
+}
+
+model BacBlanc {
+  id               String         @id @default(cuid())
+  userId           String
+  user             User           @relation("BacBlancStudent", fields: [userId], references: [id], onDelete: Cascade)
+  sessionNumber    Int
+  trimestre        Int
+  niveau           Niveau
+  subject          String
+  sujetUrl         String?
+  copieUrl         String?
+  status           BacBlancStatus @default(PENDING)
+  correcteurId     String?
+  correcteur       User?          @relation("BacBlancCorrecteur", fields: [correcteurId], references: [id])
+  noteFinale       Float?
+  noteDetails      Json?
+  commentaire      String?        @db.Text
+  copieCorrigeeUrl String?
+  submittedAt      DateTime?
+  correctedAt      DateTime?
+  createdAt        DateTime       @default(now())
+}
+
+model ApiConfig {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt
+  updatedBy String
+}

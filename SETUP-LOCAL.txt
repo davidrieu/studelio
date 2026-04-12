@@ -1,0 +1,78 @@
+================================================================================
+  STUDELIO — Installation locale (débutant)
+================================================================================
+
+--- PC ARM (Windows ARM64, Snapdragon, etc.) ---------------------------------
+
+  - Utilise Docker Desktop pour Windows **ARM64** (téléchargement sur le site Docker).
+  - L’image PostgreSQL du projet est multi-arch : rien à changer pour l’ARM.
+  - Si une commande `docker` affiche erreur 500 ou "cannot connect" :
+      1) Ouvre Docker Desktop et attends jusqu’à "Docker Desktop is running".
+      2) Menu en haut à droite (roue) > Restart ou Quit Docker Desktop puis relance.
+  - Le plus simple ensuite : double-clique ou exécute dans PowerShell :
+        scripts\lancer-studelio.ps1
+    (depuis le dossier du projet :  powershell -ExecutionPolicy Bypass -File scripts\lancer-studelio.ps1)
+
+--- Conflit sur le port 5432 ---------------------------------------------------
+
+  Si tu as déjà PostgreSQL installé sur Windows, le port 5432 peut être pris.
+  Dans docker-compose.yml, remplace la ligne des ports par :
+        - "5433:5432"
+  Et dans le fichier .env, mets le port 5433 :
+        DATABASE_URL="postgresql://studelio:studelio@localhost:5433/studelio"
+
+================================================================================
+
+1) Dépendances Node (déjà fait si tu as lancé npm install)
+   Ouvre PowerShell dans le dossier du projet et exécute :
+
+   npm install
+
+2) Base de données PostgreSQL — CHOISIS UNE OPTION :
+
+   A) Docker (le plus simple une fois Docker Desktop installé)
+      - Installe Docker Desktop : https://www.docker.com/products/docker-desktop/
+      - Redémarre le PC si demandé, ouvre Docker Desktop et attends qu’il soit prêt.
+      - Dans le dossier du projet :
+          docker compose up -d
+
+   B) PostgreSQL installé sur Windows (winget / installateur)
+      - Termine l’installation si une fenêtre te demande un mot de passe (note-le).
+      - Crée une base nommée "studelio" (avec pgAdmin ou psql).
+      - Mets dans le fichier .env une URL du type :
+          postgresql://postgres:TON_MOT_DE_PASSE@localhost:5432/studelio
+
+   C) Base gratuite en ligne (sans rien installer sur le PC)
+      - Crée un projet sur https://neon.tech ou https://supabase.com
+      - Copie la "connection string" PostgreSQL dans .env comme DATABASE_URL=
+
+3) Fichier .env
+   - Le projet contient un .env d’exemple pour Docker :
+     postgresql://studelio:studelio@localhost:5432/studelio
+   - Ajoute aussi (obligatoire pour la connexion) :
+     AUTH_SECRET=une-phrase-secrete-d-au-moins-32-caracteres
+     NEXTAUTH_SECRET=la-meme-valeur
+
+4) Tout préparer en une commande (après Docker OU après avoir mis DATABASE_URL)
+
+   npm run setup:local
+
+   (Si Docker n’est pas installé, le script te le dira : installe Docker puis relance.)
+
+   À la main, équivalent :
+   npx prisma generate
+   npx prisma db push
+   npm run db:seed
+
+5) Lancer le site
+
+   npm run dev
+
+   Puis ouvre http://localhost:3000
+
+6) Compte de démonstration (après le seed)
+
+   Email : demo@studelio.local
+   Mot de passe : studelio-local
+
+================================================================================

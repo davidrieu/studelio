@@ -1,0 +1,21 @@
+# PostgreSQL pour Studelio (image officielle = ARM64 + x64, Docker choisit l’architecture adaptée)
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: studelio-postgres
+    environment:
+      POSTGRES_USER: studelio
+      POSTGRES_PASSWORD: studelio
+      POSTGRES_DB: studelio
+    ports:
+      - "5432:5432"
+    volumes:
+      - studelio_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U studelio -d studelio"]
+      interval: 3s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  studelio_pg:
