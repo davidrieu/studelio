@@ -1,8 +1,15 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { getBuildInfo } from "@/lib/build-info";
 import { LoginForm } from "./login-form";
 
 export default function LoginPage() {
+  const build = getBuildInfo();
+  const deployLabel =
+    build.commitShort === "local"
+      ? `v${build.semver} · local`
+      : `v${build.semver} · ${build.branch ?? "?"}@${build.commitShort}${build.vercelEnv === "preview" ? " (preview)" : ""}`;
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[var(--studelio-bg-soft)] px-4 py-12">
       <div className="mb-8 text-center">
@@ -20,6 +27,9 @@ export default function LoginPage() {
           <Link href="/auth/register" className="font-medium text-[var(--studelio-blue)] hover:underline">
             Créer un compte
           </Link>
+        </p>
+        <p className="mt-4 text-center font-mono text-xs text-muted-foreground/80" title="Identifiant de build (commit Git sur Vercel)">
+          {deployLabel}
         </p>
       </div>
     </div>
