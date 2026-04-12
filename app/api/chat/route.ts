@@ -115,6 +115,13 @@ export async function POST(req: Request) {
   const stream = new ReadableStream({
     async start(controller) {
       const push = (obj: object) => controller.enqueue(sse(obj));
+      let errorSentToClient = false;
+      const pushErrorOnce = (message: string) => {
+        if (errorSentToClient) return;
+        errorSentToClient = true;
+        push({ type: "error", message });
+      };
+
       try {
         push({ type: "session", id: chatSessionId });
 
@@ -133,6 +140,13 @@ export async function POST(req: Request) {
 
         msgStream.on("error", (err) => {
           console.error("[chat] stream error", err);
+          const msg =
+            err instanceof Error
+              ? err.message
+              : typeof err === "object" && err !== null && "message" in err
+                ? String((err as { message: unknown }).message)
+                : "Erreur pendant la génération (API Anthropic).";
+          pushErrorOnce(msg);
         });
 
         const final = await msgStream.finalMessage();
@@ -166,10 +180,11 @@ export async function POST(req: Request) {
         });
       } catch (e) {
         console.error("[chat]", e);
-        push({
-          type: "error",
-          message: e instanceof Error ? e.message : "Erreur lors de la réponse d’André.",
-        });
+        if (!errorSentToClient) {
+          pushErrorOnce(
+            e instanceof Error ? e.message : "Erreur lors de la réponse d’André.",
+          );
+        }
       } finally {
         controller.close();
       }

@@ -44,7 +44,7 @@ export function AndreChat() {
 
   const loadSessions = useCallback(async () => {
     try {
-      const res = await fetch("/api/chat/sessions");
+      const res = await fetch("/api/chat/sessions", { credentials: "include" });
       if (!res.ok) return;
       const data = (await res.json()) as { sessions?: SessionRow[] };
       setSessions(data.sessions ?? []);
@@ -63,7 +63,9 @@ export function AndreChat() {
     setLoadingMessages(true);
     setError(null);
     try {
-      const res = await fetch(`/api/chat/messages?sessionId=${encodeURIComponent(sid)}`);
+      const res = await fetch(`/api/chat/messages?sessionId=${encodeURIComponent(sid)}`, {
+        credentials: "include",
+      });
       if (!res.ok) {
         setError("Impossible de charger les messages.");
         return;
@@ -277,6 +279,15 @@ export function AndreChat() {
               </div>
             </div>
           ))}
+
+          {sending && !streamText ? (
+            <div className="flex justify-start">
+              <div className="flex max-w-[min(100%,42rem)] items-center gap-2 rounded-2xl border border-[var(--studelio-border)] bg-[var(--studelio-bg-soft)] px-4 py-2.5 text-sm text-muted-foreground">
+                <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-[var(--studelio-blue)]" />
+                André réfléchit…
+              </div>
+            </div>
+          ) : null}
 
           {streamText ? (
             <div className="flex justify-start">
