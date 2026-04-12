@@ -110,20 +110,21 @@ model VerificationToken {
 }
 
 model StudentProfile {
-  id            String  @id @default(cuid())
-  userId        String  @unique
-  user          User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  niveau        Niveau
-  interests     String[]
-  tags          Tag[]
-  parentId      String?
-  parent        ParentProfile? @relation(fields: [parentId], references: [id])
-  streakDays    Int     @default(0)
-  totalMinutes  Int     @default(0)
-  lastSessionAt DateTime?
-  errorProfile  Json    @default("{}")
-  programmeId   String?
-  programme     Programme? @relation(fields: [programmeId], references: [id])
+  id                     String    @id @default(cuid())
+  userId                 String    @unique
+  user                   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  niveau                 Niveau
+  interests              String[]
+  tags                   Tag[]
+  parentId               String?
+  parent                 ParentProfile? @relation(fields: [parentId], references: [id])
+  streakDays             Int       @default(0)
+  totalMinutes           Int       @default(0)
+  lastSessionAt          DateTime?
+  errorProfile           Json      @default("{}")
+  programmeId            String?
+  programme              Programme? @relation(fields: [programmeId], references: [id])
+  onboardingCompletedAt  DateTime?
 }
 
 model ParentProfile {

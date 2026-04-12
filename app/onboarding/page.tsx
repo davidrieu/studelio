@@ -1,17 +1,36 @@
-import Link from "next/link";
-import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
+import { OnboardingForm } from "./onboarding-form";
 
-export default function OnboardingPage() {
+export default async function OnboardingPage() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    redirect("/auth/login?session=required");
+  }
+  if (session.user.role !== "STUDENT") {
+    redirect("/parent/dashboard");
+  }
+
+  const profile = await prisma.studentProfile.findUnique({
+    where: { userId: session.user.id },
+    select: { onboardingCompletedAt: true, niveau: true },
+  });
+
+  if (!profile) {
+    redirect("/auth/register");
+  }
+  if (profile.onboardingCompletedAt) {
+    redirect("/app/dashboard");
+  }
+
   return (
     <div className="mx-auto flex min-h-screen max-w-lg flex-col justify-center gap-6 px-4 py-12">
-      <h1 className="font-display text-3xl font-semibold text-[var(--studelio-text)]">Onboarding</h1>
-      <p className="text-[var(--studelio-text-body)]">
-        Les étapes profil (centres d’intérêt, tags) seront détaillées ici. Ensuite, choix du plan.
-      </p>
-      <Link href="/onboarding/plan" className={cn(buttonVariants(), "w-fit rounded-full")}>
-        Choisir mon plan
-      </Link>
+      <div>
+        <h1 className="font-display text-3xl font-semibold text-[var(--studelio-text)]">Personnaliser Studelio</h1>
+        <p className="mt-2 text-[var(--studelio-text-body)]">Quelques réponses pour qu’André te parle vraiment à toi.</p>
+      </div>
+      <OnboardingForm niveau={profile.niveau} />
     </div>
   );
 }
