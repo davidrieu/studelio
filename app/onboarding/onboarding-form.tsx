@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useFormState } from "react-dom";
 import { useRouter } from "next/navigation";
 import type { Niveau } from "@prisma/client";
-import { completeOnboardingAction, type OnboardingState } from "@/actions/onboarding";
+import { completeOnboardingAction } from "@/actions/onboarding";
 import { niveauLabel, suggestedInterests, tagLabel } from "@/lib/labels";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
