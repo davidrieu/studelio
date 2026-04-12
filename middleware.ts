@@ -10,7 +10,9 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  const token = await getToken({ req, secret });
+  // Sur HTTPS (Vercel), Auth.js pose __Secure-authjs.session-token ; sans secureCookie: true, getToken cherchait authjs.session-token → jamais de session.
+  const secureCookie = req.nextUrl.protocol === "https:";
+  const token = await getToken({ req, secret, secureCookie });
   const { pathname } = req.nextUrl;
   const role = token?.role as Role | undefined;
 
