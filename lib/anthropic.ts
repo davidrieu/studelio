@@ -7,5 +7,5 @@ export function getAnthropic(): Anthropic | null {
 }
 
 export function andreModel(): string {
-  return process.env.ANTHROPIC_MODEL?.trim() || "claude-sonnet-4-5-20250929";
+  return process.env.ANTHROPIC_MODEL?.trim() || "claude-sonnet-4-6";
 }
