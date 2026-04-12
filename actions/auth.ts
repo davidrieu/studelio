@@ -31,7 +31,7 @@ const registerSchema = z
   });
 
 export type RegisterState =
-  | { ok: true; redirect: "/onboarding" | "/parent/dashboard" }
+  | { ok: true; redirect: "/onboarding" | "/parent/dashboard"; email: string }
   | { ok: false; message: string; fieldErrors?: Record<string, string[]> };
 
 export async function registerAction(_: RegisterState | undefined, formData: FormData): Promise<RegisterState> {
@@ -49,7 +49,7 @@ export async function registerAction(_: RegisterState | undefined, formData: For
     return { ok: false, message: "Vérifie le formulaire.", fieldErrors };
   }
 
-  const email = parsed.data.email.toLowerCase();
+  const email = parsed.data.email.trim().toLowerCase();
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
     return { ok: false, message: "Cet email est déjà utilisé." };
@@ -106,5 +106,6 @@ export async function registerAction(_: RegisterState | undefined, formData: For
   return {
     ok: true,
     redirect: role === "STUDENT" ? "/onboarding" : "/parent/dashboard",
+    email,
   };
 }

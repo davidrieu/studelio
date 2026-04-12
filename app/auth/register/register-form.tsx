@@ -33,29 +33,33 @@ export function RegisterForm() {
     const form = e.currentTarget;
     const fd = new FormData(form);
 
-    const res = await registerAction(undefined, fd);
-    if (!res.ok) {
-      setError(res.message);
+    const registerRes = await registerAction(undefined, fd);
+    if (!registerRes.ok) {
+      setError(registerRes.message);
       setLoading(false);
       return;
     }
 
-    const email = (fd.get("email") as string).toLowerCase();
     const password = fd.get("password") as string;
     const sign = await signIn("credentials", {
-      email,
+      email: registerRes.email,
       password,
       redirect: false,
     });
 
-    setLoading(false);
-    if (sign?.error) {
-      setError("Compte créé mais la connexion a échoué. Connecte-toi manuellement.");
+    if (!sign?.ok) {
+      setLoading(false);
+      setError(
+        sign?.error === "CredentialsSignin"
+          ? "Compte créé, mais la connexion a échoué. Réessaie sur la page de connexion avec le même mot de passe."
+          : "Compte créé, mais la connexion automatique a échoué. Connecte-toi manuellement.",
+      );
       router.push("/auth/login");
       return;
     }
-    router.push(res.redirect);
-    router.refresh();
+
+    setLoading(false);
+    window.location.assign(registerRes.redirect);
   }
 
   return (
