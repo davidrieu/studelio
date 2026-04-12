@@ -1,17 +1,29 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { getSession, signIn } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
+import type { Role } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+function homeForRole(role: Role | undefined): string {
+  switch (role) {
+    case "PARENT":
+      return "/parent/dashboard";
+    case "ADMIN":
+    case "CORRECTOR":
+      return "/admin/dashboard";
+    default:
+      return "/app/dashboard";
+  }
+}
+
 export function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") ?? "/app/dashboard";
+  const requestedCallback = searchParams.get("callbackUrl");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -20,7 +32,7 @@ export function LoginForm() {
     setError(null);
     setLoading(true);
     const fd = new FormData(e.currentTarget);
-    const email = (fd.get("email") as string).toLowerCase();
+    const email = (fd.get("email") as string).toLowerCase().trim();
     const password = fd.get("password") as string;
 
     const res = await signIn("credentials", {
@@ -29,13 +41,33 @@ export function LoginForm() {
       redirect: false,
     });
 
-    setLoading(false);
-    if (res?.error) {
-      setError("Email ou mot de passe incorrect.");
+    if (!res?.ok) {
+      setLoading(false);
+      setError(
+        res?.error === "CredentialsSignin"
+          ? "Email ou mot de passe incorrect."
+          : "Connexion impossible. Vérifie ta connexion ou réessaie dans un instant.",
+      );
       return;
     }
-    router.push(callbackUrl);
-    router.refresh();
+
+    const session = await getSession();
+    const role = session?.user?.role as Role | undefined;
+    const fallback = homeForRole(role);
+    let target = fallback;
+    if (requestedCallback && role === "STUDENT" && requestedCallback.startsWith("/app")) {
+      target = requestedCallback;
+    }
+    if (requestedCallback && role === "PARENT" && requestedCallback.startsWith("/parent")) {
+      target = requestedCallback;
+    }
+    if (requestedCallback && (role === "ADMIN" || role === "CORRECTOR") && requestedCallback.startsWith("/admin")) {
+      target = requestedCallback;
+    }
+
+    setLoading(false);
+    // Navigation complète : le cookie de session est bien pris en compte par le middleware (évite les retours silencieux sur /login).
+    window.location.assign(target);
   }
 
   return (
