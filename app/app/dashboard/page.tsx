@@ -13,7 +13,12 @@ function formatMinutes(m: number) {
   return r ? `${h} h ${r} min` : `${h} h`;
 }
 
-export default async function StudentDashboardPage() {
+export default async function StudentDashboardPage({
+  searchParams,
+}: {
+  searchParams?: Record<string, string | string[] | undefined>;
+}) {
+  const checkoutOk = searchParams?.checkout === "success";
   const session = await auth();
   if (!session?.user?.id) {
     redirect("/auth/login?session=required");
@@ -46,6 +51,15 @@ export default async function StudentDashboardPage() {
 
   return (
     <div className="space-y-8">
+      {checkoutOk ? (
+        <p
+          className="rounded-[16px] border border-[var(--studelio-green-dim)] bg-[var(--studelio-green-dim)] px-4 py-3 text-sm text-[var(--studelio-text)]"
+          role="status"
+        >
+          Merci ! Paiement reçu. Ton abonnement apparaît ci-dessous dès que Stripe nous confirme le webhook (quelques
+          secondes). Actualise la page si le statut reste « À finaliser ».
+        </p>
+      ) : null}
       <section className="rounded-[20px] border border-[var(--studelio-border)] bg-gradient-to-br from-[var(--studelio-bg-soft)] to-[var(--studelio-bg-muted)] p-8 shadow-[var(--studelio-shadow)]">
         <p className="font-display text-2xl font-semibold text-[var(--studelio-text)]">
           Bonjour, {name} 👋
