@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { registerAction } from "@/actions/auth";
+import { fetchAuthSession } from "@/lib/auth-session-client";
 
 const niveaux = [
   { value: "SIXIEME", label: "6e" },
@@ -41,25 +42,45 @@ export function RegisterForm() {
     }
 
     const password = fd.get("password") as string;
-    const sign = await signIn("credentials", {
-      email: registerRes.email,
-      password,
-      redirect: false,
-    });
+    const origin = window.location.origin;
+    const safeCallbackUrl = `${origin}/auth/register`;
 
-    if (!sign?.ok) {
-      setLoading(false);
-      setError(
-        sign?.error === "CredentialsSignin"
-          ? "Compte créé, mais la connexion a échoué. Réessaie sur la page de connexion avec le même mot de passe."
-          : "Compte créé, mais la connexion automatique a échoué. Connecte-toi manuellement.",
-      );
+    try {
+      const sign = await signIn("credentials", {
+        email: registerRes.email,
+        password,
+        redirect: false,
+        callbackUrl: safeCallbackUrl,
+      });
+
+      if (!sign?.ok) {
+        setError(
+          sign?.error === "CredentialsSignin"
+            ? "Compte créé, mais la connexion a échoué. Réessaie sur la page de connexion avec le même mot de passe."
+            : sign?.error
+              ? `Compte créé, mais connexion refusée (${sign.error}).`
+              : "Compte créé, mais la connexion automatique a échoué. Connecte-toi manuellement.",
+        );
+        router.push("/auth/login");
+        return;
+      }
+
+      const session = await fetchAuthSession();
+      if (!session?.user?.id) {
+        setError(
+          "Compte créé, mais la session n’a pas été enregistrée (cookies ou variables Vercel : AUTH_SECRET, AUTH_URL). Connecte-toi à la main ou réessaie en navigation privée.",
+        );
+        router.push("/auth/login");
+        return;
+      }
+
+      window.location.assign(registerRes.redirect);
+    } catch {
+      setError("Une erreur technique est survenue après l’inscription. Réessaie ou connecte-toi manuellement.");
       router.push("/auth/login");
-      return;
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
-    window.location.assign(registerRes.redirect);
   }
 
   return (

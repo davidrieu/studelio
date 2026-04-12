@@ -9,8 +9,11 @@ import { prisma } from "@/lib/prisma";
 const googleEnabled =
   Boolean(process.env.GOOGLE_CLIENT_ID) && Boolean(process.env.GOOGLE_CLIENT_SECRET);
 
+const authSecret = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET;
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
+  secret: authSecret,
   session: { strategy: "jwt", maxAge: 30 * 24 * 60 * 60 },
   pages: { signIn: "/auth/login" },
   trustHost: true,
@@ -55,11 +58,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user, trigger, session }) {
       if (user?.id) {
         token.id = user.id;
-        const dbUser = await prisma.user.findUnique({
-          where: { id: user.id },
-          select: { role: true },
-        });
-        token.role = (user as { role?: Role }).role ?? dbUser?.role ?? "STUDENT";
+        const fromAuthorize = (user as { role?: Role }).role;
+        token.role = fromAuthorize ?? "STUDENT";
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: user.id },
+            select: { role: true },
+          });
+          if (dbUser?.role) token.role = dbUser.role;
+        } catch {
+          /* Ne pas bloquer la connexion si la DB flanche après authorize */
+        }
       }
       if (trigger === "update" && session?.user?.name) {
         token.name = session.user.name;

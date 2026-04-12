@@ -16,7 +16,7 @@ export async function middleware(req: NextRequest) {
 
   if (pathname.startsWith("/app")) {
     if (!token) {
-      return NextResponse.redirect(new URL("/auth/login", req.url));
+      return NextResponse.redirect(new URL("/auth/login?session=required", req.url));
     }
     if (role !== "STUDENT") {
       return NextResponse.redirect(new URL("/auth/login?error=role", req.url));
@@ -25,7 +25,7 @@ export async function middleware(req: NextRequest) {
 
   if (pathname.startsWith("/parent")) {
     if (!token) {
-      return NextResponse.redirect(new URL("/auth/login", req.url));
+      return NextResponse.redirect(new URL("/auth/login?session=required", req.url));
     }
     if (role !== "PARENT") {
       return NextResponse.redirect(new URL("/auth/login?error=role", req.url));
@@ -34,7 +34,7 @@ export async function middleware(req: NextRequest) {
 
   if (pathname.startsWith("/admin")) {
     if (!token) {
-      return NextResponse.redirect(new URL("/auth/login", req.url));
+      return NextResponse.redirect(new URL("/auth/login?session=required", req.url));
     }
     if (role !== "ADMIN" && role !== "CORRECTOR") {
       return NextResponse.redirect(new URL("/auth/login?error=role", req.url));
@@ -43,7 +43,7 @@ export async function middleware(req: NextRequest) {
 
   if (pathname.startsWith("/onboarding")) {
     if (!token) {
-      return NextResponse.redirect(new URL("/auth/login", req.url));
+      return NextResponse.redirect(new URL("/auth/login?session=required", req.url));
     }
   }
 
