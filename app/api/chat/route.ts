@@ -7,6 +7,7 @@ import { niveauLabel } from "@/lib/labels";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const MAX_USER_CHARS = 12_000;
@@ -122,16 +123,24 @@ export async function POST(req: Request) {
           max_tokens: 4096,
           system,
           messages: anthropicMessages,
+          // Évite les blocs « thinking » sans texte visible (Sonnet 4.6 + streaming).
+          thinking: { type: "disabled" },
         });
 
         msgStream.on("text", (delta) => {
           push({ type: "delta", text: delta });
         });
 
+        msgStream.on("error", (err) => {
+          console.error("[chat] stream error", err);
+        });
+
         const final = await msgStream.finalMessage();
         const assistantText = extractAssistantText(final);
         if (!assistantText) {
-          throw new Error("Réponse vide du modèle.");
+          throw new Error(
+            "Réponse du modèle sans texte utilisable. Vérifie ANTHROPIC_MODEL sur Vercel (ex. claude-sonnet-4-6) ou les logs.",
+          );
         }
 
         await prisma.chatMessage.create({

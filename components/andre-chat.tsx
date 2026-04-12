@@ -108,6 +108,7 @@ export function AndreChat() {
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sessionId, message: text }),
       });
@@ -137,37 +138,57 @@ export function AndreChat() {
       let buffer = "";
       let newSessionId = sessionId;
       let assistant = "";
+      let receivedDone = false;
+      let streamError: string | null = null;
+
+      const handlePayload = (payload: Record<string, unknown>) => {
+        if (payload.type === "session" && typeof payload.id === "string") {
+          newSessionId = payload.id;
+          setSessionId(payload.id);
+        }
+        if (payload.type === "delta" && typeof payload.text === "string") {
+          assistant += payload.text;
+          setStreamText(assistant);
+        }
+        if (payload.type === "error" && typeof payload.message === "string") {
+          streamError = payload.message;
+          setError(payload.message);
+        }
+        if (payload.type === "done") {
+          receivedDone = true;
+        }
+      };
+
+      const parseDataLine = (line: string) => {
+        const t = line.trim();
+        if (!t.startsWith("data: ")) return;
+        try {
+          handlePayload(JSON.parse(t.slice(6)) as Record<string, unknown>);
+        } catch {
+          /* JSON partiel ou bruit */
+        }
+      };
 
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
+        buffer += decoder.decode(value ?? new Uint8Array(), { stream: !done });
         const parts = buffer.split("\n\n");
         buffer = parts.pop() ?? "";
         for (const block of parts) {
-          const line = block.trim();
-          if (!line.startsWith("data: ")) continue;
-          let payload: Record<string, unknown>;
-          try {
-            payload = JSON.parse(line.slice(6)) as Record<string, unknown>;
-          } catch {
-            continue;
-          }
-          if (payload.type === "session" && typeof payload.id === "string") {
-            newSessionId = payload.id;
-            setSessionId(payload.id);
-          }
-          if (payload.type === "delta" && typeof payload.text === "string") {
-            assistant += payload.text;
-            setStreamText(assistant);
-          }
-          if (payload.type === "error" && typeof payload.message === "string") {
-            setError(payload.message);
-          }
-          if (payload.type === "done") {
-            setStreamText("");
-          }
+          parseDataLine(block);
         }
+        if (done) break;
+      }
+
+      // Dernier bloc SSE parfois sans \n\n (proxy / fin de flux).
+      for (const line of buffer.split("\n")) {
+        parseDataLine(line);
+      }
+
+      if (!receivedDone && !streamError && !assistant) {
+        setError(
+          "La réponse s’est arrêtée trop tôt (souvent limite de temps Vercel ~10 s sur le plan gratuit, ou coupure réseau). Passe en Pro ou réessaie.",
+        );
       }
 
       if (newSessionId) {
