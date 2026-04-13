@@ -50,6 +50,74 @@ async function seedDemoUser() {
   console.log("");
 }
 
+async function seedDemoBacBlancs() {
+  const user = await prisma.user.findUnique({ where: { email: "demo@studelio.local" } });
+  if (!user) return;
+  const n = await prisma.bacBlanc.count({ where: { userId: user.id } });
+  if (n > 0) return;
+
+  const now = new Date();
+  await prisma.bacBlanc.createMany({
+    data: [
+      {
+        userId: user.id,
+        sessionNumber: 1,
+        trimestre: 1,
+        niveau: "SIXIEME",
+        subject: "Français — Lecture & vocabulaire",
+        status: "CORRECTED",
+        noteFinale: 14,
+        submittedAt: new Date(now.getTime() - 86400000 * 14),
+        correctedAt: new Date(now.getTime() - 86400000 * 7),
+        commentaire: "Bonne compréhension globale. À creuser : le champ lexical du registre soutenu.",
+      },
+      {
+        userId: user.id,
+        sessionNumber: 2,
+        trimestre: 1,
+        niveau: "SIXIEME",
+        subject: "Français — Grammaire en situation",
+        status: "IN_REVIEW",
+        submittedAt: new Date(now.getTime() - 86400000 * 2),
+      },
+      {
+        userId: user.id,
+        sessionNumber: 1,
+        trimestre: 2,
+        niveau: "SIXIEME",
+        subject: "Français — Expression écrite",
+        status: "SUBMITTED",
+        submittedAt: new Date(now.getTime() - 86400000),
+      },
+      {
+        userId: user.id,
+        sessionNumber: 2,
+        trimestre: 2,
+        niveau: "SIXIEME",
+        subject: "Français — Conjugaison",
+        status: "PENDING",
+      },
+      {
+        userId: user.id,
+        sessionNumber: 1,
+        trimestre: 3,
+        niveau: "SIXIEME",
+        subject: "Français — Bilan annuel",
+        status: "PENDING",
+      },
+      {
+        userId: user.id,
+        sessionNumber: 2,
+        trimestre: 3,
+        niveau: "SIXIEME",
+        subject: "Français — Lecture analytique",
+        status: "PENDING",
+      },
+    ],
+  });
+  console.log("Seed : 6 bacs blancs démo pour demo@studelio.local");
+}
+
 async function main() {
   for (const p of programmeSeeds) {
     const folder = loadProgrammeFolderForNiveau(p.niveau, repoRoot);
@@ -96,6 +164,7 @@ async function main() {
   }
 
   await seedDemoUser();
+  await seedDemoBacBlancs();
 
   console.log(`Seed OK — ${programmeSeeds.length} programmes.`);
 }

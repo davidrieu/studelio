@@ -1,4 +1,11 @@
-import type { ChapterProgressStatus, Niveau, Plan, SubStatus, Tag } from "@prisma/client";
+import type {
+  BacBlancStatus,
+  ChapterProgressStatus,
+  Niveau,
+  Plan,
+  SubStatus,
+  Tag,
+} from "@prisma/client";
 
 export const niveauLabel: Record<Niveau, string> = {
   SIXIEME: "6e",
@@ -30,6 +37,13 @@ export const chapterProgressLabel: Record<ChapterProgressStatus, string> = {
   NOT_STARTED: "Pas commencé",
   IN_PROGRESS: "En cours",
   COMPLETED: "Terminé",
+};
+
+export const bacBlancStatusLabel: Record<BacBlancStatus, string> = {
+  PENDING: "À venir",
+  SUBMITTED: "Copie envoyée",
+  IN_REVIEW: "En correction",
+  CORRECTED: "Corrigé",
 };
 
 export const subStatusLabel: Record<SubStatus, string> = {
