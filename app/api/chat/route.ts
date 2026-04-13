@@ -8,6 +8,7 @@ import { andreModel, getAnthropic } from "@/lib/anthropic";
 import { formatLoadedFolderForPrompt, loadProgrammeFolderForNiveau } from "@/lib/programme-folder-loader";
 import { niveauLabel } from "@/lib/labels";
 import { prisma } from "@/lib/prisma";
+import { MINUTES_PER_CHAT_ROUND, recordStudentActivity } from "@/lib/record-student-activity";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -307,6 +308,8 @@ export async function POST(req: Request) {
           where: { id: chatSessionId! },
           data: { updatedAt: new Date() },
         });
+
+        await recordStudentActivity(session.user.id, MINUTES_PER_CHAT_ROUND);
 
         push({
           type: "done",

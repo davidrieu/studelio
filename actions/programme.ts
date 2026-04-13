@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { MINUTES_PER_CHAPTER_ACTIVITY, recordStudentActivity } from "@/lib/record-student-activity";
 
 const inputSchema = z.object({
   chapterId: z.string().min(1),
@@ -57,6 +58,8 @@ export async function setChapterProgress(
     },
     update: { status: parsed.data.status },
   });
+
+  await recordStudentActivity(session.user.id, MINUTES_PER_CHAPTER_ACTIVITY);
 
   revalidatePath("/app/programme");
   revalidatePath("/app/dashboard");

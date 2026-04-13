@@ -75,10 +75,23 @@ export default async function StudentDashboardPage({
             </>
           ) : null}
         </p>
+        {sp.lastSessionAt ? (
+          <p className="mt-2 text-sm text-muted-foreground">
+            Dernière activité :{" "}
+            {new Intl.DateTimeFormat("fr-FR", {
+              dateStyle: "medium",
+              timeStyle: "short",
+            }).format(sp.lastSessionAt)}
+          </p>
+        ) : null}
       </section>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Série (jours)" value={String(sp.streakDays)} hint="À venir : mise à jour auto avec tes sessions" />
+        <StatCard
+          label="Série (jours)"
+          value={String(sp.streakDays)}
+          hint="Jours consécutifs avec au moins une activité (Paris), mis à jour après André ou ta progression programme"
+        />
         <StatCard label="Temps sur Studelio" value={formatMinutes(sp.totalMinutes)} />
         <StatCard label="Discussions avec André" value={String(user._count.chatSessions)} />
         <StatCard
