@@ -50,6 +50,37 @@ async function seedDemoUser() {
   console.log("");
 }
 
+/** Compte admin local / démo — même mot de passe que l’élève démo. En prod publique : change le mot de passe ou retire ce seed. */
+async function seedAdminUser() {
+  const email = "admin@studelio.local";
+  await prisma.user.upsert({
+    where: { email },
+    create: {
+      email,
+      name: "Administrateur Studelio",
+      password: DEMO_PASSWORD_HASH,
+      role: "ADMIN",
+      subscription: {
+        create: {
+          stripeCustomerId: "pending_admin_studelio_local",
+          status: "INCOMPLETE",
+          plan: "ESSENTIEL",
+        },
+      },
+    },
+    update: {
+      role: "ADMIN",
+      password: DEMO_PASSWORD_HASH,
+      name: "Administrateur Studelio",
+    },
+  });
+
+  console.log("Compte administrateur (connexion directe) :");
+  console.log("  Email    : admin@studelio.local");
+  console.log("  Mot de passe : studelio-local");
+  console.log("");
+}
+
 async function seedDemoBacBlancs() {
   const user = await prisma.user.findUnique({ where: { email: "demo@studelio.local" } });
   if (!user) return;
@@ -172,6 +203,7 @@ async function main() {
   }
 
   await seedDemoUser();
+  await seedAdminUser();
   await seedDemoBacBlancs();
 
   console.log(`Seed OK — ${programmeSeeds.length} programmes.`);

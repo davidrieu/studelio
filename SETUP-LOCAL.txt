@@ -70,9 +70,14 @@
 
    Puis ouvre http://localhost:3000
 
-6) Compte de démonstration (après le seed)
+6) Comptes de démonstration (après le seed)
 
+   Élève démo
    Email : demo@studelio.local
+   Mot de passe : studelio-local
+
+   Administrateur (back-office : /admin, bacs blancs, etc.)
+   Email : admin@studelio.local
    Mot de passe : studelio-local
 
 ================================================================================
