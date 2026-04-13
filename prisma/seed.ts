@@ -157,6 +157,42 @@ async function seedDemoBacBlancs() {
   console.log("Seed : 6 bacs blancs démo pour demo@studelio.local");
 }
 
+async function seedDemoBlancSlots() {
+  const n = await prisma.blancSlot.count();
+  if (n > 0) return;
+
+  const now = new Date();
+  const visioSoon = new Date(now.getTime() + 86400000 * 5);
+  visioSoon.setHours(10, 0, 0, 0);
+
+  await prisma.blancSlot.createMany({
+    data: [
+      {
+        title: "Français — Brevet blanc (démo)",
+        kind: "BREVET_BLANC",
+        description: "Sujet type collège — inscris-toi pour voir le lien visio (démo locale).",
+        visioAt: visioSoon,
+        visioUrl: "https://meet.google.com/demo-brevet-blanc-studelio",
+        visioLabel: "Salle démo",
+        published: true,
+        capacity: 30,
+        closesAt: new Date(now.getTime() + 86400000 * 4),
+      },
+      {
+        title: "Français — Bac blanc (démo lycée)",
+        kind: "BAC_BLANC",
+        description: "Réservé aux niveaux 2nde → BTS en local.",
+        visioAt: new Date(now.getTime() + 86400000 * 7),
+        visioUrl: "https://zoom.us/demo-bac-blanc-studelio",
+        visioLabel: "Lien fictif",
+        published: true,
+        capacity: 20,
+      },
+    ],
+  });
+  console.log("Seed : 2 créneaux épreuves blanches (brevet + bac) pour inscription démo");
+}
+
 async function main() {
   for (const p of programmeSeeds) {
     const folder = loadProgrammeFolderForNiveau(p.niveau, repoRoot);
@@ -205,6 +241,7 @@ async function main() {
   await seedDemoUser();
   await seedAdminUser();
   await seedDemoBacBlancs();
+  await seedDemoBlancSlots();
 
   console.log(`Seed OK — ${programmeSeeds.length} programmes.`);
 }

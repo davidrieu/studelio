@@ -16,7 +16,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               ["Dashboard", "/admin/dashboard"],
               ["Clé API", "/admin/api-keys"],
               ["Programmes", "/admin/programmes"],
-              ["Bacs blancs", "/admin/bacs-blancs"],
+              ["Épreuves blanches", "/admin/bacs-blancs"],
               ["Utilisateurs", "/admin/utilisateurs"],
               ["Abonnements", "/admin/abonnements"],
               ["Correcteurs", "/admin/correcteurs"],

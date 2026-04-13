@@ -67,6 +67,12 @@ enum BacBlancStatus {
   CORRECTED
 }
 
+/// Brevet blanc (collège) vs bac blanc (lycée / BTS).
+enum BlancKind {
+  BREVET_BLANC
+  BAC_BLANC
+}
+
 enum ChapterProgressStatus {
   NOT_STARTED
   IN_PROGRESS
@@ -90,6 +96,7 @@ model User {
   chatSessions       ChatSession[]
   bacBlancs          BacBlanc[]       @relation("BacBlancStudent")
   correctedBacBlancs BacBlanc[]       @relation("BacBlancCorrecteur")
+  blancEnrollments   BlancEnrollment[]
   accounts           Account[]
 }
 
@@ -262,6 +269,37 @@ model BacBlanc {
   createdAt        DateTime       @default(now())
 
   @@unique([userId, trimestre, sessionNumber])
+}
+
+/// Créneau proposé par l’admin (inscription libre des élèves du bon niveau).
+model BlancSlot {
+  id          String    @id @default(cuid())
+  title       String
+  kind        BlancKind
+  description String?   @db.Text
+  visioAt     DateTime?
+  visioUrl    String?
+  visioLabel  String?
+  published   Boolean   @default(false)
+  /// Nombre max d’inscrits ; null = illimité.
+  capacity    Int?
+  /// Après cette date, plus d’inscription (null = pas de limite).
+  closesAt    DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  enrollments BlancEnrollment[]
+}
+
+model BlancEnrollment {
+  id        String    @id @default(cuid())
+  slotId    String
+  slot      BlancSlot @relation(fields: [slotId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+
+  @@unique([slotId, userId])
 }
 
 model ApiConfig {

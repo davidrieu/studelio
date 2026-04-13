@@ -1,18 +1,23 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { epreuveBlancheShortLabel } from "@/lib/blanc-kind";
 import { prisma } from "@/lib/prisma";
 import { SignOutButton } from "@/components/sign-out-button";
 
 export default async function StudentAppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
+  let epreuveNavLabel = "Bac blanc";
   if (session?.user?.role === "STUDENT") {
     const profile = await prisma.studentProfile.findUnique({
       where: { userId: session.user.id },
-      select: { onboardingCompletedAt: true },
+      select: { onboardingCompletedAt: true, niveau: true },
     });
     if (!profile?.onboardingCompletedAt) {
       redirect("/onboarding");
+    }
+    if (profile?.niveau) {
+      epreuveNavLabel = epreuveBlancheShortLabel(profile.niveau);
     }
   }
 
@@ -43,7 +48,7 @@ export default async function StudentAppLayout({ children }: { children: React.R
               href="/app/bac-blanc"
               className="rounded-full px-3 py-1.5 text-[var(--studelio-text-body)] hover:bg-[var(--studelio-blue-dim)]"
             >
-              Bac blanc
+              {epreuveNavLabel}
             </Link>
             <Link
               href="/app/settings"

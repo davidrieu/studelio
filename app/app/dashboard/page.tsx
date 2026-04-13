@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { epreuveBlancheShortLabel } from "@/lib/blanc-kind";
 import { niveauLabel, planLabel, subStatusLabel } from "@/lib/labels";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -29,7 +30,7 @@ export default async function StudentDashboardPage({
     include: {
       studentProfile: { include: { programme: true } },
       subscription: true,
-      _count: { select: { chatSessions: true, bacBlancs: true } },
+      _count: { select: { chatSessions: true, blancEnrollments: true } },
     },
   });
 
@@ -42,12 +43,7 @@ export default async function StudentDashboardPage({
   const prog = sp.programme;
   const sub = user.subscription;
 
-  const pendingBac = await prisma.bacBlanc.count({
-    where: {
-      userId: user.id,
-      status: { in: ["PENDING", "SUBMITTED", "IN_REVIEW"] },
-    },
-  });
+  const epreuveLinkLabel = epreuveBlancheShortLabel(sp.niveau);
 
   return (
     <div className="space-y-8">
@@ -79,7 +75,11 @@ export default async function StudentDashboardPage({
         <StatCard label="Série (jours)" value={String(sp.streakDays)} hint="À venir : mise à jour auto avec tes sessions" />
         <StatCard label="Temps sur Studelio" value={formatMinutes(sp.totalMinutes)} />
         <StatCard label="Discussions avec André" value={String(user._count.chatSessions)} />
-        <StatCard label="Bacs blancs suivis" value={String(user._count.bacBlancs)} hint={pendingBac ? `${pendingBac} en cours` : undefined} />
+        <StatCard
+          label={`Inscriptions ${epreuveLinkLabel.toLowerCase()}`}
+          value={String(user._count.blancEnrollments)}
+          hint="Créneaux auxquels tu es inscrit·e"
+        />
       </div>
 
       <section className="rounded-[20px] border border-[var(--studelio-border)] bg-card p-6 shadow-[var(--studelio-shadow)] sm:p-8">
@@ -117,7 +117,7 @@ export default async function StudentDashboardPage({
           Ma séance programme
         </Link>
         <Link href="/app/bac-blanc" className={cn(buttonVariants({ variant: "outline" }), "rounded-full")}>
-          Bacs blancs
+          {epreuveLinkLabel}
         </Link>
       </section>
     </div>
