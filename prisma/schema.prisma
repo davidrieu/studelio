@@ -196,6 +196,8 @@ model Programme {
   niveau      Niveau             @unique
   title       String
   description String?
+  /// Consignes pédagogiques pour l’IA (souvent importées depuis content/programmes/{NIVEAU}.md au seed).
+  aiBrief     String?            @db.Text
   chapters    ProgrammeChapter[]
   students    StudentProfile[]
   updatedAt   DateTime           @updatedAt

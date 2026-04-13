@@ -1,7 +1,11 @@
 import { PrismaClient } from "@prisma/client";
 import { programmeSeeds } from "./data/programmes";
+import { loadProgrammeMarkdownFromDisk } from "./load-content-programme";
 
 const prisma = new PrismaClient();
+
+/** Racine du repo (les scripts npm s’exécutent depuis le dossier projet). */
+const repoRoot = process.cwd();
 
 /** Mot de passe en clair : studelio-local — uniquement pour le dev local (seed). */
 const DEMO_PASSWORD_HASH =
@@ -47,16 +51,24 @@ async function seedDemoUser() {
 
 async function main() {
   for (const p of programmeSeeds) {
+    const fromFile = loadProgrammeMarkdownFromDisk(p.niveau, repoRoot);
+    const title = fromFile?.title ?? p.title;
+    const description = fromFile?.description ?? p.description;
+
     const programme = await prisma.programme.upsert({
       where: { niveau: p.niveau },
       create: {
         niveau: p.niveau,
-        title: p.title,
-        description: p.description,
+        title,
+        description,
+        aiBrief: fromFile?.aiBrief?.trim() ? fromFile.aiBrief : null,
       },
       update: {
-        title: p.title,
-        description: p.description,
+        title,
+        description,
+        ...(fromFile?.aiBrief !== undefined
+          ? { aiBrief: fromFile.aiBrief.trim() ? fromFile.aiBrief : null }
+          : {}),
       },
     });
 

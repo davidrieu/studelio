@@ -49,7 +49,20 @@ export async function POST(req: Request) {
 
   const userRow = await prisma.user.findUnique({
     where: { id: session.user.id },
-    include: { studentProfile: true },
+    include: {
+      studentProfile: {
+        include: {
+          programme: {
+            include: {
+              chapters: {
+                orderBy: { order: "asc" },
+                select: { order: true, title: true, objectives: true },
+              },
+            },
+          },
+        },
+      },
+    },
   });
 
   if (!userRow?.studentProfile) {
@@ -57,6 +70,29 @@ export async function POST(req: Request) {
   }
 
   const sp = userRow.studentProfile;
+
+  let programmeForPrompt = sp.programme;
+  if (!programmeForPrompt) {
+    programmeForPrompt = await prisma.programme.findUnique({
+      where: { niveau: sp.niveau },
+      include: {
+        chapters: {
+          orderBy: { order: "asc" },
+          select: { order: true, title: true, objectives: true },
+        },
+      },
+    });
+  }
+
+  const chapterThemes =
+    programmeForPrompt?.chapters
+      .map((c) => {
+        const obj = c.objectives.length
+          ? ` — objectifs : ${c.objectives.slice(0, 3).join(" ; ")}`
+          : "";
+        return `${c.order}. **${c.title}**${obj}`;
+      })
+      .join("\n") ?? "";
   const firstName = userRow.name?.split(/\s+/)[0] ?? "toi";
 
   let chatSessionId = body.sessionId?.trim() || null;
@@ -107,6 +143,13 @@ export async function POST(req: Request) {
     niveauLabel: niveauLabel[sp.niveau],
     interests: sp.interests,
     tags: sp.tags,
+    programme: programmeForPrompt
+      ? {
+          title: programmeForPrompt.title,
+          aiBrief: programmeForPrompt.aiBrief,
+          chapterThemes,
+        }
+      : null,
   });
 
   const encoder = new TextEncoder();
