@@ -27,7 +27,10 @@ export default async function ParentElevesPage() {
 
       {rows.length === 0 ? (
         <div className="rounded-[20px] border border-dashed border-[var(--studelio-border)] bg-card/60 p-8 text-center">
-          <p className="text-muted-foreground">Aucun élève relié. L’inscription élève doit inclure ton email parent.</p>
+          <p className="text-muted-foreground">
+            Aucun élève relié. L’élève doit t’associer depuis son tableau de bord (section parent / tuteur) après
+            l’onboarding.
+          </p>
         </div>
       ) : (
         <div className="space-y-6">

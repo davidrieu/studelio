@@ -22,8 +22,8 @@ export default async function ParentDashboardPage() {
         <div className="rounded-[20px] border border-dashed border-[var(--studelio-border)] bg-card/60 p-8 text-center">
           <p className="font-medium text-[var(--studelio-text)]">Aucun élève relié pour l’instant</p>
           <p className="mt-2 text-sm text-muted-foreground">
-            Lors de son inscription, l’élève doit indiquer ton adresse email dans le champ « parent ou tuteur ». Tu recevras
-            alors un message pour accéder à cet espace.
+            L’élève peut relier ton compte depuis son tableau de bord Studelio après l’onboarding, avec ton email et un mot
+            de passe que vous choisissez ensemble. Aucun email automatique n’est envoyé depuis Studelio.
           </p>
         </div>
       ) : (

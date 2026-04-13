@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { epreuveBlancheShortLabel } from "@/lib/blanc-kind";
 import { niveauLabel, planLabel, subStatusLabel } from "@/lib/labels";
+import { AddParentTutorForm } from "@/components/add-parent-tutor-form";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -28,7 +29,12 @@ export default async function StudentDashboardPage({
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     include: {
-      studentProfile: { include: { programme: true } },
+      studentProfile: {
+        include: {
+          programme: true,
+          parent: { include: { user: { select: { email: true } } } },
+        },
+      },
       subscription: true,
       _count: { select: { chatSessions: true, blancEnrollments: true } },
     },
@@ -107,6 +113,26 @@ export default async function StudentDashboardPage({
         >
           Voir les plans
         </Link>
+      </section>
+
+      <section className="rounded-[20px] border border-[var(--studelio-border)] bg-card p-6 shadow-[var(--studelio-shadow)] sm:p-8">
+        <h2 className="font-display text-lg font-semibold text-[var(--studelio-text)]">Parent ou tuteur</h2>
+        {sp.parent?.user?.email ? (
+          <p className="mt-3 text-sm text-[var(--studelio-text-body)]">
+            Compte relié :{" "}
+            <span className="font-medium text-[var(--studelio-text)]">{sp.parent.user.email}</span>. Le parent peut se
+            connecter sur Studelio avec cette adresse et le mot de passe que tu as défini. Tu peux remplacer la liaison
+            ci-dessous (le compte parent existant reste inchangé si l’email existe déjà).
+          </p>
+        ) : (
+          <p className="mt-2 text-sm text-muted-foreground">
+            Ajoute l’email et le mot de passe du compte parent ou tuteur. Aucun email automatique n’est envoyé : transmets
+            les identifiants au parent toi-même.
+          </p>
+        )}
+        <div className="mt-6">
+          <AddParentTutorForm />
+        </div>
       </section>
 
       <section className="flex flex-wrap gap-3">
