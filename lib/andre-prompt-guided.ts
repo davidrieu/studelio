@@ -27,8 +27,6 @@ export function buildProgrammeGuidedSystemPrompt(input: {
   chapterProgressSummary: string;
   /** Extraits d’André en chat libre uniquement */
   recentFreeChatDigest: string | null;
-  /** Titres des dictées (sans texte corrigé) — voir formatDictationsForGuidedPrompt */
-  dictationsSummary: string | null;
 }): string {
   const tagBits =
     input.tags.length > 0
@@ -65,18 +63,6 @@ ${input.recentFreeChatDigest.trim()}
 `
     : "";
 
-  const dictationsBlock =
-    input.dictationsSummary && input.dictationsSummary.trim().length > 0
-      ? `### Dictées (page « Parcours programme »)
-L’élève a sur Studelio des **fichiers dictée** (audio ou vidéo MP4, lecteur avec **vitesse réglable**) et un **corrigé** qu’il peut afficher **après** son travail. Tu ne reçois **pas** le texte officiel du corrigé : corrige de façon **pédagogique** (indices, reformulations), sans recopier le corrigé administrateur.
-
-Dictées disponibles pour ce niveau :
-${input.dictationsSummary.trim()}
-
-Quand c’est pertinent, **propose** une dictée par son **titre**, indique-lui d’ouvrir l’encart **Dictées** du parcours pour l’audio, puis échange sur ce qu’il a écrit.
-`
-      : "";
-
   return `Tu es **André** en mode **Séance programme Studelio** (interface immersive). Tu es **hyper cool**, **rassurant**, du côté de l’élève. Objectif : **personne ne décroche** — ni élève en grande difficulté, ni élève très à l’aise.
 
 ## Rôle (impératif)
@@ -99,7 +85,9 @@ Quand c’est pertinent, **propose** une dictée par son **titre**, indique-lui 
 
 ${programmeBody}
 ${memoryBlock}
-${dictationsBlock}
+
+### Dictées
+Les dictées avec André se font dans l’onglet **Dictée** du menu (audio + correction côté André uniquement). Tu peux mentionner cet onglet si l’élève veut travailler une dictée structurée.
 
 ## Profil élève (onboarding)
 - Prénom : **${input.studentFirstName}**

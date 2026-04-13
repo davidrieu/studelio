@@ -2,12 +2,12 @@ import type { MessageParam, TextBlock } from "@anthropic-ai/sdk/resources/messag
 import type { ChatSessionKind } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { buildDicteeSystemPrompt } from "@/lib/andre-prompt-dictee";
 import { buildProgrammeGuidedSystemPrompt } from "@/lib/andre-prompt-guided";
 import { buildAndreSystemPrompt } from "@/lib/andre-prompt";
 import { andreModel, getAnthropic } from "@/lib/anthropic";
 import { formatLoadedFolderForPrompt, loadProgrammeFolderForNiveau } from "@/lib/programme-folder-loader";
 import { niveauLabel } from "@/lib/labels";
-import { formatDictationsForGuidedPrompt } from "@/lib/dictation-prompt";
 import { prisma } from "@/lib/prisma";
 import { MINUTES_PER_CHAT_ROUND, recordStudentActivity } from "@/lib/record-student-activity";
 
@@ -20,6 +20,8 @@ const MAX_HISTORY_MESSAGES = 32;
 
 /** Déclencheur interne : l’élève n’a rien écrit ; André ouvre la séance. */
 const PROGRAMME_GUIDED_BOOTSTRAP_USER = `[Ouverture de séance « Programme guidé ». L’élève vient d’entrer dans l’interface immersive : il n’a pas encore écrit. Accueille-le brièvement (ton cool et rassurant), expose en 2–4 phrases le plan de travail que tu vas mener (en t’appuyant sur le programme et son profil), puis propose immédiatement le premier exercice concret avec une seule consigne claire — sans lui demander de choisir un thème ni un chapitre.]`;
+
+const DICTEE_BOOTSTRAP_USER = `[Ouverture dictée Studelio. L’élève a l’audio sur la page (lecteur, vitesse réglable). Il n’a pas encore envoyé son texte. Accueille-le brièvement, rappelle la consigne : écouter puis écrire, puis coller ou taper sa dictée ici pour que tu l’aides. Ne donne pas le texte officiel. Sois rassurant.]`;
 
 function extractAssistantText(message: { content: unknown[] }): string {
   const blocks = message.content.filter((b): b is TextBlock => (b as TextBlock).type === "text");
@@ -45,6 +47,7 @@ export async function POST(req: Request) {
     message?: string;
     mode?: string;
     bootstrap?: boolean;
+    dictationId?: string | null;
   };
   try {
     body = await req.json();
@@ -52,12 +55,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "JSON invalide." }, { status: 400 });
   }
 
-  const mode: ChatSessionKind = body.mode === "programme_guided" ? "PROGRAMME_GUIDED" : "FREE";
+  const mode: ChatSessionKind =
+    body.mode === "programme_guided" ? "PROGRAMME_GUIDED" : body.mode === "dictee" ? "DICTATION" : "FREE";
   const isGuided = mode === "PROGRAMME_GUIDED";
+  const isDictee = mode === "DICTATION";
   const isBootstrap = isGuided && body.bootstrap === true && !body.sessionId;
+  const isDicteeBootstrap = isDictee && body.bootstrap === true && !body.sessionId;
 
   const raw = typeof body.message === "string" ? body.message.trim() : "";
-  if (!isBootstrap && !raw) {
+  if (!isBootstrap && !isDicteeBootstrap && !raw) {
     return NextResponse.json({ error: "Message vide." }, { status: 400 });
   }
   if (raw.length > MAX_USER_CHARS) {
@@ -114,8 +120,59 @@ export async function POST(req: Request) {
   const firstName = userRow.name?.split(/\s+/)[0] ?? "toi";
 
   let chatSessionId = body.sessionId?.trim() || null;
+  let dicteeContext: { title: string; correctedText: string } | null = null;
 
-  if (chatSessionId) {
+  async function loadDictationForStudent(dictationId: string) {
+    const pid =
+      sp.programmeId ??
+      (await prisma.programme.findUnique({ where: { niveau: sp.niveau }, select: { id: true } }))?.id;
+    if (!pid) {
+      return null;
+    }
+    return prisma.programmeDictation.findFirst({
+      where: { id: dictationId, programmeId: pid },
+      select: { id: true, title: true, correctedText: true },
+    });
+  }
+
+  if (isDictee) {
+    const dictationIdFromBody = typeof body.dictationId === "string" ? body.dictationId.trim() : "";
+    if (chatSessionId) {
+      const existing = await prisma.chatSession.findFirst({
+        where: { id: chatSessionId, userId: session.user.id, kind: "DICTATION" },
+        include: { dictation: { select: { title: true, correctedText: true } } },
+      });
+      if (!existing) {
+        return NextResponse.json({ error: "Session invalide." }, { status: 400 });
+      }
+      if (!existing.dictation) {
+        return NextResponse.json({ error: "Dictée introuvable pour cette session." }, { status: 400 });
+      }
+      dicteeContext = {
+        title: existing.dictation.title,
+        correctedText: existing.dictation.correctedText,
+      };
+    } else {
+      if (!dictationIdFromBody) {
+        return NextResponse.json({ error: "dictationId requis pour une nouvelle dictée." }, { status: 400 });
+      }
+      const d = await loadDictationForStudent(dictationIdFromBody);
+      if (!d) {
+        return NextResponse.json({ error: "Dictée introuvable ou niveau incompatible." }, { status: 400 });
+      }
+      dicteeContext = { title: d.title, correctedText: d.correctedText };
+      const created = await prisma.chatSession.create({
+        data: {
+          userId: session.user.id,
+          niveau: sp.niveau,
+          subject: `Dictée : ${d.title}`,
+          kind: "DICTATION",
+          dictationId: d.id,
+        },
+      });
+      chatSessionId = created.id;
+    }
+  } else if (chatSessionId) {
     const existing = await prisma.chatSession.findFirst({
       where: { id: chatSessionId, userId: session.user.id },
     });
@@ -137,7 +194,7 @@ export async function POST(req: Request) {
     chatSessionId = created.id;
   }
 
-  if (!isBootstrap) {
+  if (!isBootstrap && !isDicteeBootstrap) {
     await prisma.chatMessage.create({
       data: {
         sessionId: chatSessionId!,
@@ -165,6 +222,9 @@ export async function POST(req: Request) {
   if (isBootstrap) {
     anthropicMessages.push({ role: "user", content: PROGRAMME_GUIDED_BOOTSTRAP_USER });
   }
+  if (isDicteeBootstrap) {
+    anthropicMessages.push({ role: "user", content: DICTEE_BOOTSTRAP_USER });
+  }
 
   const folderLoad = loadProgrammeFolderForNiveau(sp.niveau, process.cwd());
   const aiBriefEffective = folderLoad
@@ -184,7 +244,7 @@ export async function POST(req: Request) {
     : null;
 
   let chapterProgressSummary = "";
-  if (isGuided && programmeForPrompt?.chapters?.length) {
+  if (isGuided && programmeForPrompt?.chapters?.length && !isDictee) {
     const progressRows = await prisma.studentChapterProgress.findMany({
       where: {
         studentProfileId: sp.id,
@@ -201,7 +261,7 @@ export async function POST(req: Request) {
   }
 
   const recentWhere =
-    isGuided
+    isGuided || isDictee
       ? {
           role: "ANDRE" as const,
           session: { userId: session.user.id, kind: "FREE" as const },
@@ -228,38 +288,40 @@ export async function POST(req: Request) {
           .join("\n\n")
       : null;
 
-  let dictationsSummary: string | null = null;
-  if (isGuided && programmeForPrompt?.id) {
-    const dictRows = await prisma.programmeDictation.findMany({
-      where: { programmeId: programmeForPrompt.id },
-      orderBy: { order: "asc" },
-      select: { id: true, title: true },
-    });
-    const formatted = formatDictationsForGuidedPrompt(dictRows);
-    dictationsSummary = formatted.trim().length > 0 ? formatted : null;
+  if (isDictee && !dicteeContext) {
+    return NextResponse.json({ error: "Contexte dictée manquant." }, { status: 500 });
   }
 
-  const system = isGuided
-    ? buildProgrammeGuidedSystemPrompt({
+  const system = isDictee
+    ? buildDicteeSystemPrompt({
         studentFirstName: firstName,
         niveau: sp.niveau,
         niveauLabel: niveauLabel[sp.niveau],
         interests: sp.interests,
         tags: sp.tags,
-        programme: programmeCtx,
-        chapterProgressSummary,
-        recentFreeChatDigest: recentDigest,
-        dictationsSummary,
+        dictationTitle: dicteeContext!.title,
+        officialText: dicteeContext!.correctedText,
       })
-    : buildAndreSystemPrompt({
-        studentFirstName: firstName,
-        niveau: sp.niveau,
-        niveauLabel: niveauLabel[sp.niveau],
-        interests: sp.interests,
-        tags: sp.tags,
-        programme: programmeCtx,
-        recentAndreDigest: recentDigest,
-      });
+    : isGuided
+      ? buildProgrammeGuidedSystemPrompt({
+          studentFirstName: firstName,
+          niveau: sp.niveau,
+          niveauLabel: niveauLabel[sp.niveau],
+          interests: sp.interests,
+          tags: sp.tags,
+          programme: programmeCtx,
+          chapterProgressSummary,
+          recentFreeChatDigest: recentDigest,
+        })
+      : buildAndreSystemPrompt({
+          studentFirstName: firstName,
+          niveau: sp.niveau,
+          niveauLabel: niveauLabel[sp.niveau],
+          interests: sp.interests,
+          tags: sp.tags,
+          programme: programmeCtx,
+          recentAndreDigest: recentDigest,
+        });
 
   const encoder = new TextEncoder();
   const sse = (obj: object) => encoder.encode(`data: ${JSON.stringify(obj)}\n\n`);

@@ -45,6 +45,12 @@ export default async function StudentAppLayout({ children }: { children: React.R
               Programme
             </Link>
             <Link
+              href="/app/dictee"
+              className="rounded-full px-3 py-1.5 text-[var(--studelio-text-body)] hover:bg-[var(--studelio-blue-dim)]"
+            >
+              Dictée
+            </Link>
+            <Link
               href="/app/bac-blanc"
               className="rounded-full px-3 py-1.5 text-[var(--studelio-text-body)] hover:bg-[var(--studelio-blue-dim)]"
             >

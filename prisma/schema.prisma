@@ -58,6 +58,7 @@ enum MessageRole {
 enum ChatSessionKind {
   FREE
   PROGRAMME_GUIDED
+  DICTATION
 }
 
 enum BacBlancStatus {
@@ -178,10 +179,14 @@ model ChatSession {
   subject     String?
   niveau      Niveau?
   kind        ChatSessionKind  @default(FREE)
+  dictationId String?
+  dictation   ProgrammeDictation? @relation(fields: [dictationId], references: [id], onDelete: SetNull)
   messages    ChatMessage[]
   attachments Attachment[]
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
+
+  @@index([dictationId])
 }
 
 model ChatMessage {
@@ -230,6 +235,8 @@ model ProgrammeDictation {
   order         Int       @default(0)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+
+  chatSessions  ChatSession[]
 
   @@index([programmeId, order])
 }

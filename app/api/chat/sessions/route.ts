@@ -14,7 +14,9 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const kindParam = searchParams.get("kind");
   const kind: ChatSessionKind | undefined =
-    kindParam === "PROGRAMME_GUIDED" || kindParam === "FREE" ? kindParam : undefined;
+    kindParam === "PROGRAMME_GUIDED" || kindParam === "FREE" || kindParam === "DICTATION"
+      ? kindParam
+      : undefined;
 
   const rows = await prisma.chatSession.findMany({
     where: { userId: session.user.id, ...(kind ? { kind } : {}) },

@@ -1,13 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
+/** Métadonnées dictée côté élève (pas de corrigé). */
 export type DictationRow = {
   id: string;
   title: string;
   audioUrl: string;
-  correctedText: string;
   order: number;
 };
 
@@ -20,7 +22,6 @@ function dictationUrlLooksLikeVideo(url: string): boolean {
 function DictationPlayer({ row }: { row: DictationRow }) {
   const mediaRef = useRef<HTMLMediaElement | null>(null);
   const [rate, setRate] = useState(1);
-  const [showCorrect, setShowCorrect] = useState(false);
 
   const isVideo = useMemo(() => dictationUrlLooksLikeVideo(row.audioUrl), [row.audioUrl]);
 
@@ -78,22 +79,15 @@ function DictationPlayer({ row }: { row: DictationRow }) {
             <span className="w-10 font-mono text-[var(--studelio-text)]">{rate.toFixed(1)}×</span>
           </label>
         </div>
-        <div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="rounded-full"
-            onClick={() => setShowCorrect((s) => !s)}
-          >
-            {showCorrect ? "Masquer le corrigé" : "Voir le corrigé"}
-          </Button>
-          {showCorrect ? (
-            <div className="mt-3 rounded-xl border border-[var(--studelio-border)] bg-card p-4 text-sm leading-relaxed text-[var(--studelio-text-body)] whitespace-pre-wrap">
-              {row.correctedText}
-            </div>
-          ) : null}
-        </div>
+        <p className="text-sm text-[var(--studelio-text-body)]">
+          Le corrigé reste côté André : ouvre la dictée dans l’onglet dédié pour lui envoyer ton texte.
+        </p>
+        <Link
+          href={`/app/dictee?d=${encodeURIComponent(row.id)}`}
+          className={cn(buttonVariants(), "inline-flex w-fit rounded-full")}
+        >
+          Faire avec André
+        </Link>
       </div>
     </article>
   );
@@ -114,8 +108,9 @@ export function ProgrammeDictationsSection({ dictations }: Props) {
     <section className="rounded-[20px] border border-[var(--studelio-border)] bg-card p-6 shadow-[var(--studelio-shadow)] sm:p-8">
       <h2 className="font-display text-lg font-semibold text-[var(--studelio-text)]">Dictées</h2>
       <p className="mt-2 max-w-2xl text-sm text-[var(--studelio-text-body)]">
-        Écoute ou regarde le média (vitesse réglable), écris ta dictée, puis compare avec le corrigé quand tu es prêt·e. Les
-        fichiers MP3 et MP4 (piste audio) sont pris en charge. André peut aussi te proposer ces dictées en séance programme.
+        Écoute le média (vitesse réglable), puis va dans l’onglet <strong className="font-medium">Dictée</strong> ou clique
+        « Faire avec André » : tu colleras ton texte dans le chat — André a le corrigé en interne et t’aide sans te le
+        donner mot pour mot. MP3 et MP4 (piste audio) sont pris en charge.
       </p>
       <ul className="mt-6 space-y-6">
         {sorted.map((d) => (

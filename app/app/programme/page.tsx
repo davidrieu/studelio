@@ -22,7 +22,7 @@ export default async function ProgrammePage() {
           chapters: { orderBy: { order: "asc" } },
           dictations: {
             orderBy: { order: "asc" },
-            select: { id: true, title: true, audioUrl: true, correctedText: true, order: true },
+            select: { id: true, title: true, audioUrl: true, order: true },
           },
         },
       },
@@ -50,7 +50,7 @@ export default async function ProgrammePage() {
               chapters: { orderBy: { order: "asc" } },
               dictations: {
                 orderBy: { order: "asc" },
-                select: { id: true, title: true, audioUrl: true, correctedText: true, order: true },
+                select: { id: true, title: true, audioUrl: true, order: true },
               },
             },
           },
