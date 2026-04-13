@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ChatMarkdown } from "@/components/chat-markdown";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -275,7 +276,11 @@ export function AndreChat() {
                     : "border border-[var(--studelio-border)] bg-[var(--studelio-bg-soft)] text-[var(--studelio-text-body)]",
                 )}
               >
-                <p className="whitespace-pre-wrap">{m.content}</p>
+                {m.role === "ANDRE" ? (
+                  <ChatMarkdown content={m.content} />
+                ) : (
+                  <p className="whitespace-pre-wrap">{m.content}</p>
+                )}
               </div>
             </div>
           ))}
@@ -292,7 +297,7 @@ export function AndreChat() {
           {streamText ? (
             <div className="flex justify-start">
               <div className="max-w-[min(100%,42rem)] rounded-2xl border border-[var(--studelio-border)] bg-[var(--studelio-bg-soft)] px-4 py-2.5 text-sm leading-relaxed text-[var(--studelio-text-body)]">
-                <p className="whitespace-pre-wrap">{streamText}</p>
+                <ChatMarkdown content={streamText} />
                 <span className="mt-1 inline-block h-2 w-2 animate-pulse rounded-full bg-[var(--studelio-blue)]" />
               </div>
             </div>

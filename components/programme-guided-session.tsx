@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ChatMarkdown } from "@/components/chat-markdown";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -310,7 +311,11 @@ export function ProgrammeGuidedSession() {
                     : "border border-[var(--studelio-border)] bg-card text-[var(--studelio-text-body)] shadow-sm",
                 )}
               >
-                <p className="whitespace-pre-wrap">{m.content}</p>
+                {m.role === "ANDRE" ? (
+                  <ChatMarkdown content={m.content} />
+                ) : (
+                  <p className="whitespace-pre-wrap">{m.content}</p>
+                )}
               </div>
             </div>
           ))}
@@ -318,7 +323,7 @@ export function ProgrammeGuidedSession() {
           {streamText ? (
             <div className="flex justify-start">
               <div className="max-w-[min(100%,40rem)] rounded-2xl border border-[var(--studelio-border)] bg-card px-4 py-3 text-sm leading-relaxed text-[var(--studelio-text-body)] shadow-sm">
-                <p className="whitespace-pre-wrap">{streamText}</p>
+                <ChatMarkdown content={streamText} />
                 <span className="mt-2 inline-block h-2 w-2 animate-pulse rounded-full bg-[var(--studelio-blue)]" />
               </div>
             </div>
