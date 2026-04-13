@@ -57,6 +57,8 @@ async function seedDemoBacBlancs() {
   if (n > 0) return;
 
   const now = new Date();
+  const visioDemo = new Date(now.getTime() + 86400000 * 3);
+  visioDemo.setHours(14, 0, 0, 0);
   await prisma.bacBlanc.createMany({
     data: [
       {
@@ -67,6 +69,9 @@ async function seedDemoBacBlancs() {
         subject: "Français — Lecture & vocabulaire",
         status: "CORRECTED",
         noteFinale: 14,
+        visioAt: new Date(now.getTime() - 86400000 * 21),
+        visioUrl: "https://meet.google.com/demo-studelio",
+        visioLabel: "Exemple — salle démo",
         submittedAt: new Date(now.getTime() - 86400000 * 14),
         correctedAt: new Date(now.getTime() - 86400000 * 7),
         commentaire: "Bonne compréhension globale. À creuser : le champ lexical du registre soutenu.",
@@ -78,6 +83,9 @@ async function seedDemoBacBlancs() {
         niveau: "SIXIEME",
         subject: "Français — Grammaire en situation",
         status: "IN_REVIEW",
+        visioAt: visioDemo,
+        visioUrl: "https://zoom.us/demo",
+        visioLabel: "Lien fictif — remplacé par l’admin en prod",
         submittedAt: new Date(now.getTime() - 86400000 * 2),
       },
       {

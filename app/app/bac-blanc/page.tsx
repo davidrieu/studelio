@@ -11,6 +11,17 @@ function formatDate(d: Date | null | undefined) {
   return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
 }
 
+function formatVisioDateTime(d: Date) {
+  return d.toLocaleString("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 const statusStyle: Record<string, string> = {
   PENDING: "bg-muted text-muted-foreground",
   SUBMITTED: "bg-[var(--studelio-blue-dim)] text-[var(--studelio-text)]",
@@ -34,8 +45,9 @@ export default async function BacBlancListPage() {
       <header className="rounded-[20px] border border-[var(--studelio-border)] bg-gradient-to-br from-[var(--studelio-bg-soft)] to-card p-6 shadow-[var(--studelio-shadow)] sm:p-8">
         <h1 className="font-display text-2xl font-semibold text-[var(--studelio-text)]">Bacs blancs</h1>
         <p className="mt-2 max-w-2xl text-sm text-[var(--studelio-text-body)]">
-          Suivi de tes épreuves blanches : sujets, envoi de copie, correction et notes. Les sessions sont créées par
-          l’équipe Studelio ou ton établissement — tu les retrouves ici dès qu’elles sont planifiées.
+          Les épreuves blanches se déroulent en <strong className="font-medium text-[var(--studelio-text)]">visio</strong>{" "}
+          : date, lien et consignes apparaissent ci-dessous. Après la séance, tu pourras suivre l’envoi de copie, la
+          correction et la note.
         </p>
       </header>
 
@@ -76,6 +88,33 @@ export default async function BacBlancListPage() {
                   {bacBlancStatusLabel[b.status]}
                 </span>
               </div>
+
+              {b.visioAt || b.visioUrl || b.visioLabel ? (
+                <div className="mt-4 rounded-xl border border-[var(--studelio-blue)]/25 bg-[var(--studelio-blue-dim)]/50 p-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--studelio-blue)]">
+                    Visioconférence
+                  </p>
+                  {b.visioAt ? (
+                    <p className="mt-1 text-sm font-medium text-[var(--studelio-text)]">{formatVisioDateTime(b.visioAt)}</p>
+                  ) : null}
+                  {b.visioLabel ? (
+                    <p className="mt-1 text-xs text-[var(--studelio-text-body)]">{b.visioLabel}</p>
+                  ) : null}
+                  {b.visioUrl ? (
+                    <a
+                      href={b.visioUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={cn(
+                        buttonVariants({ size: "sm" }),
+                        "mt-3 inline-flex rounded-full",
+                      )}
+                    >
+                      Rejoindre la visio
+                    </a>
+                  ) : null}
+                </div>
+              ) : null}
 
               <dl className="mt-4 grid gap-2 border-t border-[var(--studelio-border)]/60 pt-4 text-sm">
                 <div className="flex justify-between gap-4">

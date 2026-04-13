@@ -244,6 +244,12 @@ model BacBlanc {
   subject          String
   sujetUrl         String?
   copieUrl         String?
+  /// Date et heure de la séance en visioconférence.
+  visioAt          DateTime?
+  /// Lien Zoom, Meet, Teams, etc.
+  visioUrl         String?
+  /// Libellé court affiché à l’élève (ex. « Salle A »).
+  visioLabel       String?
   status           BacBlancStatus @default(PENDING)
   correcteurId     String?
   correcteur       User?          @relation("BacBlancCorrecteur", fields: [correcteurId], references: [id])
@@ -254,6 +260,8 @@ model BacBlanc {
   submittedAt      DateTime?
   correctedAt      DateTime?
   createdAt        DateTime       @default(now())
+
+  @@unique([userId, trimestre, sessionNumber])
 }
 
 model ApiConfig {
