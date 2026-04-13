@@ -3,9 +3,17 @@ import type {
   ChapterProgressStatus,
   Niveau,
   Plan,
+  Role,
   SubStatus,
   Tag,
 } from "@prisma/client";
+
+export const roleLabel: Record<Role, string> = {
+  STUDENT: "Élève",
+  PARENT: "Parent",
+  CORRECTOR: "Correcteur",
+  ADMIN: "Administrateur",
+};
 
 export const niveauLabel: Record<Niveau, string> = {
   SIXIEME: "6e",
