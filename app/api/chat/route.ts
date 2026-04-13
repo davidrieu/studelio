@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { buildAndreSystemPrompt } from "@/lib/andre-prompt";
 import { andreModel, getAnthropic } from "@/lib/anthropic";
+import { formatLoadedFolderForPrompt, loadProgrammeFolderForNiveau } from "@/lib/programme-folder-loader";
 import { niveauLabel } from "@/lib/labels";
 import { prisma } from "@/lib/prisma";
 
@@ -137,19 +138,48 @@ export async function POST(req: Request) {
     }
   }
 
+  const folderLoad = loadProgrammeFolderForNiveau(sp.niveau, process.cwd());
+  const aiBriefEffective = folderLoad
+    ? formatLoadedFolderForPrompt(folderLoad)
+    : programmeForPrompt?.aiBrief ?? null;
+
+  const recentAndreRows = await prisma.chatMessage.findMany({
+    where: {
+      role: "ANDRE",
+      session: { userId: session.user.id },
+      NOT: { sessionId: chatSessionId! },
+    },
+    orderBy: { createdAt: "desc" },
+    take: 10,
+    select: { content: true },
+  });
+
+  const recentAndreDigest =
+    recentAndreRows.length > 0
+      ? recentAndreRows
+          .reverse()
+          .map((r, i) => `---\n### Échange antérieur ${i + 1}\n${r.content.slice(0, 2200)}`)
+          .join("\n\n")
+      : null;
+
+  const programmeTitle = programmeForPrompt?.title ?? `Français — ${niveauLabel[sp.niveau]}`;
+  const showProgramme = Boolean(folderLoad || programmeForPrompt);
+
   const system = buildAndreSystemPrompt({
     studentFirstName: firstName,
     niveau: sp.niveau,
     niveauLabel: niveauLabel[sp.niveau],
     interests: sp.interests,
     tags: sp.tags,
-    programme: programmeForPrompt
+    programme: showProgramme
       ? {
-          title: programmeForPrompt.title,
-          aiBrief: programmeForPrompt.aiBrief,
+          title: programmeTitle,
+          aiBrief: aiBriefEffective,
           chapterThemes,
+          fromFolder: Boolean(folderLoad),
         }
       : null,
+    recentAndreDigest,
   });
 
   const encoder = new TextEncoder();

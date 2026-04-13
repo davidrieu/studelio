@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { formatLoadedFolderForPrompt, loadProgrammeFolderForNiveau } from "../lib/programme-folder-loader";
 import { programmeSeeds } from "./data/programmes";
 import { loadProgrammeMarkdownFromDisk } from "./load-content-programme";
 
@@ -51,6 +52,8 @@ async function seedDemoUser() {
 
 async function main() {
   for (const p of programmeSeeds) {
+    const folder = loadProgrammeFolderForNiveau(p.niveau, repoRoot);
+    const briefFromFolder = folder ? formatLoadedFolderForPrompt(folder) : null;
     const fromFile = loadProgrammeMarkdownFromDisk(p.niveau, repoRoot);
     const title = fromFile?.title ?? p.title;
     const description = fromFile?.description ?? p.description;
@@ -61,14 +64,17 @@ async function main() {
         niveau: p.niveau,
         title,
         description,
-        aiBrief: fromFile?.aiBrief?.trim() ? fromFile.aiBrief : null,
+        aiBrief:
+          briefFromFolder ?? (fromFile?.aiBrief?.trim() ? fromFile.aiBrief : null),
       },
       update: {
         title,
         description,
-        ...(fromFile?.aiBrief !== undefined
-          ? { aiBrief: fromFile.aiBrief.trim() ? fromFile.aiBrief : null }
-          : {}),
+        ...(briefFromFolder
+          ? { aiBrief: briefFromFolder }
+          : fromFile?.aiBrief !== undefined
+            ? { aiBrief: fromFile.aiBrief.trim() ? fromFile.aiBrief : null }
+            : {}),
       },
     });
 
