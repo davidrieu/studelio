@@ -62,6 +62,12 @@ enum BacBlancStatus {
   CORRECTED
 }
 
+enum ChapterProgressStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
@@ -125,6 +131,7 @@ model StudentProfile {
   programmeId            String?
   programme              Programme? @relation(fields: [programmeId], references: [id])
   onboardingCompletedAt  DateTime?
+  chapterProgress        StudentChapterProgress[]
 }
 
 model ParentProfile {
@@ -195,15 +202,28 @@ model Programme {
 }
 
 model ProgrammeChapter {
-  id           String    @id @default(cuid())
-  programmeId  String
-  programme    Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
-  title        String
-  description  String?
-  order        Int
-  objectives   String[]
-  skills       String[]
-  systemPrompt String?   @db.Text
+  id              String                   @id @default(cuid())
+  programmeId     String
+  programme       Programme                @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+  title           String
+  description     String?
+  order           Int
+  objectives      String[]
+  skills          String[]
+  systemPrompt    String?                  @db.Text
+  studentProgress StudentChapterProgress[]
+}
+
+model StudentChapterProgress {
+  id               String                @id @default(cuid())
+  studentProfileId String
+  studentProfile   StudentProfile        @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  chapterId        String
+  chapter          ProgrammeChapter      @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  status           ChapterProgressStatus @default(NOT_STARTED)
+  updatedAt        DateTime              @updatedAt
+
+  @@unique([studentProfileId, chapterId])
 }
 
 model BacBlanc {

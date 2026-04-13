@@ -1,4 +1,4 @@
-import type { Niveau, Plan, SubStatus, Tag } from "@prisma/client";
+import type { ChapterProgressStatus, Niveau, Plan, SubStatus, Tag } from "@prisma/client";
 
 export const niveauLabel: Record<Niveau, string> = {
   SIXIEME: "6e",
@@ -24,6 +24,12 @@ export const planLabel: Record<Plan, string> = {
   ESSENTIEL: "Essentiel",
   STANDARD: "Standard",
   INTENSIF: "Intensif",
+};
+
+export const chapterProgressLabel: Record<ChapterProgressStatus, string> = {
+  NOT_STARTED: "Pas commencé",
+  IN_PROGRESS: "En cours",
+  COMPLETED: "Terminé",
 };
 
 export const subStatusLabel: Record<SubStatus, string> = {
