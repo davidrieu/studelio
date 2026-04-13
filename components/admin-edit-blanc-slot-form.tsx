@@ -15,6 +15,7 @@ export type AdminSlotEditRow = {
   title: string;
   kind: BlancKind;
   description: string | null;
+  sujetUrl: string | null;
   visioAtIso: string | null;
   visioUrl: string | null;
   visioLabel: string | null;
@@ -94,6 +95,16 @@ export function AdminEditBlancSlotForm({
           maxLength={4000}
           defaultValue={row.description ?? ""}
           className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+        />
+      </div>
+      <div>
+        <label className="text-xs font-medium text-muted-foreground">Lien du sujet (inscrits uniquement)</label>
+        <input
+          name="sujetUrl"
+          type="url"
+          defaultValue={row.sujetUrl ?? ""}
+          placeholder="https://…"
+          className="mt-1 w-full max-w-xl rounded-lg border border-input bg-background px-3 py-2 text-sm"
         />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">

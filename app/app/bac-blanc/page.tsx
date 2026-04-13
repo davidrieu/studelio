@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { BlancCopieForm } from "@/components/blanc-copie-form";
 import { BlancEnrollButton, BlancUnenrollButton } from "@/components/blanc-slot-actions";
 import { buttonVariants } from "@/components/ui/button";
 import { blancKindForNiveau, blancKindLabel, epreuveBlancheShortLabel } from "@/lib/blanc-kind";
+import { bacBlancStatusLabel } from "@/lib/labels";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
 
@@ -36,6 +38,16 @@ export default async function EpreuvesBlanchesPage() {
   const pageTitle = epreuveBlancheShortLabel(profile.niveau);
   const now = new Date();
 
+  const myEnrollments = await prisma.blancEnrollment.findMany({
+    where: { userId: session.user.id, slot: { kind } },
+    include: {
+      slot: true,
+    },
+    orderBy: [{ slot: { visioAt: "asc" } }, { createdAt: "asc" }],
+  });
+
+  const enrolledSlotIds = new Set(myEnrollments.map((e) => e.slotId));
+
   const slots = await prisma.blancSlot.findMany({
     where: {
       published: true,
@@ -44,16 +56,11 @@ export default async function EpreuvesBlanchesPage() {
     },
     orderBy: [{ visioAt: "asc" }, { createdAt: "asc" }],
     include: {
-      enrollments: {
-        where: { userId: session.user.id },
-        select: { id: true },
-      },
       _count: { select: { enrollments: true } },
     },
   });
 
-  const myEnrolled = slots.filter((s) => s.enrollments.length > 0);
-  const openToJoin = slots.filter((s) => s.enrollments.length === 0);
+  const openToJoin = slots.filter((s) => !enrolledSlotIds.has(s.id));
 
   return (
     <div className="space-y-8">
@@ -62,15 +69,13 @@ export default async function EpreuvesBlanchesPage() {
         <p className="mt-2 max-w-2xl text-sm text-[var(--studelio-text-body)]">
           {kind === "BREVET_BLANC" ? (
             <>
-              Pour le collège (6e à 3e), inscris-toi aux{" "}
-              <strong className="font-medium text-[var(--studelio-text)]">créneaux brevet blanc</strong> proposés par
-              l’équipe. Une fois inscrit·e, tu vois le lien de la visio.
+              Inscris-toi aux créneaux <strong className="font-medium text-[var(--studelio-text)]">brevet blanc</strong>{" "}
+              proposés. Après inscription : visio, sujet, envoi de copie et suivi de la correction.
             </>
           ) : (
             <>
-              Pour le lycée et le BTS, inscris-toi aux{" "}
-              <strong className="font-medium text-[var(--studelio-text)]">créneaux bac blanc</strong>. Le lien visio
-              s’affiche après inscription.
+              Inscris-toi aux créneaux <strong className="font-medium text-[var(--studelio-text)]">bac blanc</strong>.
+              Tu accèdes à la visio et au sujet une fois inscrit·e, puis tu déposes le lien de ta copie.
             </>
           )}
         </p>
@@ -79,55 +84,100 @@ export default async function EpreuvesBlanchesPage() {
 
       <section className="space-y-4">
         <h2 className="font-display text-lg font-semibold text-[var(--studelio-text)]">Mes inscriptions</h2>
-        {myEnrolled.length === 0 ? (
+        {myEnrollments.length === 0 ? (
           <p className="rounded-[20px] border border-dashed border-[var(--studelio-border)] bg-card/50 p-6 text-sm text-[var(--studelio-text-body)]">
             Tu n’es inscrit·e à aucun créneau pour l’instant. Parcours la liste ci-dessous et clique sur « M’inscrire ».
           </p>
         ) : (
           <ul className="grid gap-4 sm:grid-cols-2">
-            {myEnrolled.map((s) => (
-              <li
-                key={s.id}
-                className="rounded-[20px] border border-[var(--studelio-border)] bg-card p-5 shadow-[var(--studelio-shadow)]"
-              >
-                <h3 className="font-display text-lg font-semibold text-[var(--studelio-text)]">{s.title}</h3>
-                {s.description ? (
-                  <p className="mt-2 text-sm text-[var(--studelio-text-body)]">{s.description}</p>
-                ) : null}
-
-                {s.visioAt || s.visioUrl || s.visioLabel ? (
-                  <div className="mt-4 rounded-xl border border-[var(--studelio-blue)]/25 bg-[var(--studelio-blue-dim)]/50 p-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--studelio-blue)]">
-                      Visioconférence
-                    </p>
-                    {s.visioAt ? (
-                      <p className="mt-1 text-sm font-medium text-[var(--studelio-text)]">
-                        {formatVisioDateTime(s.visioAt)}
-                      </p>
-                    ) : null}
-                    {s.visioLabel ? (
-                      <p className="mt-1 text-xs text-[var(--studelio-text-body)]">{s.visioLabel}</p>
-                    ) : null}
-                    {s.visioUrl ? (
-                      <a
-                        href={s.visioUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={cn(buttonVariants({ size: "sm" }), "mt-3 inline-flex rounded-full")}
-                      >
-                        Rejoindre la visio
-                      </a>
-                    ) : (
-                      <p className="mt-2 text-xs text-muted-foreground">Lien à venir — l’équipe le complètera bientôt.</p>
-                    )}
+            {myEnrollments.map((row) => {
+              const s = row.slot;
+              return (
+                <li
+                  key={row.id}
+                  className="rounded-[20px] border border-[var(--studelio-border)] bg-card p-5 shadow-[var(--studelio-shadow)]"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <h3 className="font-display text-lg font-semibold text-[var(--studelio-text)]">{s.title}</h3>
+                    <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                      {bacBlancStatusLabel[row.status]}
+                    </span>
                   </div>
-                ) : null}
+                  {s.description ? (
+                    <p className="mt-2 text-sm text-[var(--studelio-text-body)]">{s.description}</p>
+                  ) : null}
 
-                <div className="mt-4">
-                  <BlancUnenrollButton slotId={s.id} />
-                </div>
-              </li>
-            ))}
+                  {s.sujetUrl ? (
+                    <a
+                      href={s.sujetUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={cn(
+                        buttonVariants({ variant: "outline", size: "sm" }),
+                        "mt-3 inline-flex rounded-full",
+                      )}
+                    >
+                      Voir le sujet
+                    </a>
+                  ) : null}
+
+                  {s.visioAt || s.visioUrl || s.visioLabel ? (
+                    <div className="mt-4 rounded-xl border border-[var(--studelio-blue)]/25 bg-[var(--studelio-blue-dim)]/50 p-3">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--studelio-blue)]">
+                        Visioconférence
+                      </p>
+                      {s.visioAt ? (
+                        <p className="mt-1 text-sm font-medium text-[var(--studelio-text)]">
+                          {formatVisioDateTime(s.visioAt)}
+                        </p>
+                      ) : null}
+                      {s.visioLabel ? (
+                        <p className="mt-1 text-xs text-[var(--studelio-text-body)]">{s.visioLabel}</p>
+                      ) : null}
+                      {s.visioUrl ? (
+                        <a
+                          href={s.visioUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={cn(buttonVariants({ size: "sm" }), "mt-3 inline-flex rounded-full")}
+                        >
+                          Rejoindre la visio
+                        </a>
+                      ) : (
+                        <p className="mt-2 text-xs text-muted-foreground">Lien à venir — l’équipe le complètera bientôt.</p>
+                      )}
+                    </div>
+                  ) : null}
+
+                  {row.status === "PENDING" ? (
+                    <BlancCopieForm enrollmentId={row.id} defaultUrl={row.copieUrl ?? ""} />
+                  ) : row.copieUrl ? (
+                    <p className="mt-3 text-xs text-muted-foreground">
+                      Copie envoyée :{" "}
+                      <a href={row.copieUrl} className="text-[var(--studelio-blue)] underline" target="_blank" rel="noreferrer">
+                        ouvrir le lien
+                      </a>
+                    </p>
+                  ) : null}
+
+                  {row.noteFinale != null ? (
+                    <p className="mt-3 font-display text-lg font-semibold text-[var(--studelio-blue)]">
+                      Note : {row.noteFinale.toFixed(1)} / 20
+                    </p>
+                  ) : null}
+                  {row.commentaire ? (
+                    <p className="mt-2 rounded-lg bg-muted/50 p-2 text-xs leading-relaxed text-[var(--studelio-text-body)]">
+                      <span className="font-medium text-[var(--studelio-text)]">Commentaire · </span>
+                      {row.commentaire.length > 400 ? `${row.commentaire.slice(0, 400)}…` : row.commentaire}
+                    </p>
+                  ) : null}
+
+                  <div className="mt-4">
+                    <BlancUnenrollButton slotId={s.id} />
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
@@ -168,7 +218,7 @@ export default async function EpreuvesBlanchesPage() {
                     ) : null}
                   </dl>
                   <p className="mt-3 text-xs text-muted-foreground">
-                    Inscris-toi pour recevoir le <strong className="font-medium text-foreground">lien visio</strong>.
+                    Après inscription : visio, sujet et dépôt de copie.
                   </p>
                   <div className="mt-4">
                     {full ? (

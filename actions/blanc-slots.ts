@@ -65,8 +65,22 @@ export async function unenrollBlancSlot(slotId: string): Promise<BlancSlotAction
     return { ok: false, message: "Créneau invalide." };
   }
 
-  const deleted = await prisma.blancEnrollment.deleteMany({
+  const existing = await prisma.blancEnrollment.findFirst({
     where: { slotId, userId: ctx.userId },
+    select: { id: true, status: true },
+  });
+  if (!existing) {
+    return { ok: false, message: "Inscription introuvable." };
+  }
+  if (existing.status !== "PENDING") {
+    return {
+      ok: false,
+      message: "Tu as déjà envoyé une copie ou elle est en correction — contacte l’équipe pour te désinscrire.",
+    };
+  }
+
+  const deleted = await prisma.blancEnrollment.deleteMany({
+    where: { id: existing.id, userId: ctx.userId, status: "PENDING" },
   });
   if (deleted.count === 0) {
     return { ok: false, message: "Inscription introuvable." };

@@ -72,6 +72,18 @@ export function AdminCreateBlancSlotForm() {
           className="mt-1 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
         />
       </div>
+      <div>
+        <label htmlFor="slot-sujetUrl" className="text-xs font-medium text-muted-foreground">
+          Lien du sujet (visible aux inscrits uniquement)
+        </label>
+        <input
+          id="slot-sujetUrl"
+          name="sujetUrl"
+          type="url"
+          placeholder="https://…"
+          className="mt-1 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
+        />
+      </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
           <label htmlFor="slot-visioAt" className="text-xs font-medium text-muted-foreground">

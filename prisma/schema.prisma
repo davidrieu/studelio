@@ -95,9 +95,10 @@ model User {
   parentProfile      ParentProfile?
   chatSessions       ChatSession[]
   bacBlancs          BacBlanc[]       @relation("BacBlancStudent")
-  correctedBacBlancs BacBlanc[]       @relation("BacBlancCorrecteur")
-  blancEnrollments   BlancEnrollment[]
-  accounts           Account[]
+  correctedBacBlancs     BacBlanc[]          @relation("BacBlancCorrecteur")
+  blancEnrollments       BlancEnrollment[]   @relation("BlancEnrollmentStudent")
+  correctedBlancEnrollments BlancEnrollment[] @relation("BlancEnrollmentCorrecteur")
+  accounts               Account[]
 }
 
 model Account {
@@ -280,6 +281,8 @@ model BlancSlot {
   visioAt     DateTime?
   visioUrl    String?
   visioLabel  String?
+  /// Lien du sujet (PDF, page…) — visible aux élèves inscrits.
+  sujetUrl    String?
   published   Boolean   @default(false)
   /// Nombre max d’inscrits ; null = illimité.
   capacity    Int?
@@ -292,12 +295,20 @@ model BlancSlot {
 }
 
 model BlancEnrollment {
-  id        String    @id @default(cuid())
-  slotId    String
-  slot      BlancSlot @relation(fields: [slotId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime  @default(now())
+  id           String          @id @default(cuid())
+  slotId       String
+  slot         BlancSlot       @relation(fields: [slotId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User            @relation("BlancEnrollmentStudent", fields: [userId], references: [id], onDelete: Cascade)
+  status       BacBlancStatus  @default(PENDING)
+  copieUrl     String?
+  noteFinale   Float?
+  commentaire  String?         @db.Text
+  correcteurId String?
+  correcteur   User?           @relation("BlancEnrollmentCorrecteur", fields: [correcteurId], references: [id])
+  submittedAt  DateTime?
+  correctedAt  DateTime?
+  createdAt    DateTime        @default(now())
 
   @@unique([slotId, userId])
 }
