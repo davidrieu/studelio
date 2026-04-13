@@ -65,16 +65,23 @@ export default async function ProgrammePage() {
 
   const prog = profile.programme;
   const chapters = prog?.chapters ?? [];
+  const dictations = prog?.dictations ?? [];
 
-  if (!prog || chapters.length === 0) {
+  // Avant : on bloquait toute la page si zéro chapitre → les dictées admin n’apparaissaient jamais.
+  const hasChapters = chapters.length > 0;
+  const hasDictations = dictations.length > 0;
+
+  if (!prog || (!hasChapters && !hasDictations)) {
     return (
       <div className="rounded-[20px] border border-[var(--studelio-border)] bg-card p-8 shadow-[var(--studelio-shadow)]">
         <h1 className="font-display text-2xl font-semibold text-[var(--studelio-text)]">Programme personnalisé</h1>
         <p className="mt-2 max-w-xl text-[var(--studelio-text-body)]">
-          Aucun programme n’est encore disponible pour le niveau{" "}
-          <span className="font-medium">{niveauLabel[profile.niveau]}</span>. Les contenus sont chargés lors du déploiement
-          (seed base de données). En local, lance{" "}
-          <code className="rounded bg-muted px-1 py-0.5 text-xs">npm run db:seed</code>.
+          Aucun contenu pour le niveau <span className="font-medium">{niveauLabel[profile.niveau]}</span> : il faut au
+          moins des chapitres (seed) ou des dictées ajoutées en admin pour le même programme que ton niveau.
+        </p>
+        <p className="mt-2 max-w-xl text-sm text-muted-foreground">
+          Vérifie en admin que la dictée est bien sous le programme qui correspond à ton niveau scolaire (ex. 3e →
+          programme Troisième).
         </p>
         <Link href="/app/dashboard" className={cn(buttonVariants(), "mt-6 inline-flex rounded-full")}>
           Retour au tableau de bord
@@ -83,12 +90,15 @@ export default async function ProgrammePage() {
     );
   }
 
-  const progressRows = await prisma.studentChapterProgress.findMany({
-    where: {
-      studentProfileId: profile.id,
-      chapterId: { in: chapters.map((c) => c.id) },
-    },
-  });
+  const progressRows =
+    hasChapters ?
+      await prisma.studentChapterProgress.findMany({
+        where: {
+          studentProfileId: profile.id,
+          chapterId: { in: chapters.map((c) => c.id) },
+        },
+      })
+    : [];
 
   const initialProgress: Partial<Record<string, ChapterProgressStatus>> = {};
   for (const row of progressRows) {
@@ -99,7 +109,7 @@ export default async function ProgrammePage() {
     <StudentProgramme
       programmeTitle={prog.title}
       programmeDescription={prog.description}
-      dictations={prog.dictations ?? []}
+      dictations={dictations}
       chapters={chapters.map((c) => ({
         id: c.id,
         order: c.order,

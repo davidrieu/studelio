@@ -96,17 +96,21 @@ export function StudentProgramme({
         </Link>
       </section>
 
-      <ProgrammeDictationsSection dictations={dictations} />
-
       <header className="rounded-[20px] border border-[var(--studelio-border)] bg-gradient-to-br from-[var(--studelio-bg-soft)] to-[var(--studelio-bg-muted)] p-6 shadow-[var(--studelio-shadow)] sm:p-8">
         <h1 className="font-display text-2xl font-semibold text-[var(--studelio-text)]">{programmeTitle}</h1>
         {programmeDescription ? (
           <p className="mt-2 max-w-2xl text-sm text-[var(--studelio-text-body)]">{programmeDescription}</p>
         ) : null}
         <p className="mt-3 text-sm font-medium text-[var(--studelio-text)]">
-          {stats.completed} / {chapters.length} chapitres terminés ({pctDone}%)
+          {chapters.length > 0 ?
+            <>
+              {stats.completed} / {chapters.length} chapitres terminés ({pctDone}%)
+            </>
+          : "Aucun chapitre en base pour l’instant — les dictées ci-dessous restent disponibles."}
         </p>
       </header>
+
+      <ProgrammeDictationsSection dictations={dictations} />
 
       {err ? (
         <p className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-2 text-sm text-destructive">
@@ -146,6 +150,12 @@ export function StudentProgramme({
           <h2 className="font-display text-lg font-semibold text-[var(--studelio-text)]">Chapitres</h2>
           <p className="mt-1 text-xs text-muted-foreground">Indique où tu en es : André s’appuiera sur ton niveau.</p>
           <ul className="mt-4 space-y-4">
+            {chapters.length === 0 ? (
+              <li className="rounded-2xl border border-dashed border-[var(--studelio-border)] bg-muted/30 px-4 py-6 text-sm text-muted-foreground">
+                Les chapitres du parcours sont chargés via le seed / la base. Tu peux quand même utiliser les dictées et la
+                séance programme avec André.
+              </li>
+            ) : null}
             {chapters.map((ch) => (
               <li
                 key={ch.id}
