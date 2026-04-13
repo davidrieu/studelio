@@ -45,8 +45,8 @@ export default async function AdminProgrammeDictationsPage({
         <h1 className="font-display text-2xl font-semibold">Dictées — {niveauLabel[programme.niveau]}</h1>
         <p className="mt-1 text-muted-foreground">{programme.title}</p>
         <p className="mt-3 max-w-2xl text-sm text-[var(--studelio-text-body)]">
-          Ajoute l’URL de l’audio (mp3, m4a, wav…) et le texte corrigé. L’élève lit le corrigé dans l’app ; André ne reçoit
-          que les titres pour proposer des dictées en séance.
+          Envoie un <strong>fichier</strong> (.mp3, .m4a, .mp4…) via Uploadthing (recommandé) ou colle une URL directe. Le
+          texte corrigé reste dans l’app ; André ne reçoit que les titres pour proposer les dictées en séance.
         </p>
       </header>
 

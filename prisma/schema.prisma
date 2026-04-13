@@ -224,7 +224,7 @@ model ProgrammeDictation {
   programmeId   String
   programme     Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
   title         String
-  /// URL publique (mp3, m4a, wav, etc.) — ex. Uploadthing ou hébergeur externe.
+  /// URL publique (mp3, m4a, mp4, etc.) — ex. Uploadthing ou hébergeur externe.
   audioUrl      String
   correctedText String    @db.Text
   order         Int       @default(0)

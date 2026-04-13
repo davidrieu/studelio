@@ -68,7 +68,7 @@ ${input.recentFreeChatDigest.trim()}
   const dictationsBlock =
     input.dictationsSummary && input.dictationsSummary.trim().length > 0
       ? `### Dictées (page « Parcours programme »)
-L’élève a sur Studelio des **audios** de dictée (lecteur avec **vitesse réglable**) et un **corrigé** qu’il peut afficher **après** son travail. Tu ne reçois **pas** le texte officiel du corrigé : corrige de façon **pédagogique** (indices, reformulations), sans recopier le corrigé administrateur.
+L’élève a sur Studelio des **fichiers dictée** (audio ou vidéo MP4, lecteur avec **vitesse réglable**) et un **corrigé** qu’il peut afficher **après** son travail. Tu ne reçois **pas** le texte officiel du corrigé : corrige de façon **pédagogique** (indices, reformulations), sans recopier le corrigé administrateur.
 
 Dictées disponibles pour ce niveau :
 ${input.dictationsSummary.trim()}

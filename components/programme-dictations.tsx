@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 
 export type DictationRow = {
@@ -11,13 +11,21 @@ export type DictationRow = {
   order: number;
 };
 
+/** MP4 / WebM / MOV → lecteur vidéo ; MP3 / M4A → lecteur audio. */
+function dictationUrlLooksLikeVideo(url: string): boolean {
+  const path = url.split("?")[0].split("#")[0].toLowerCase();
+  return [".mp4", ".m4v", ".webm", ".mov"].some((ext) => path.endsWith(ext));
+}
+
 function DictationPlayer({ row }: { row: DictationRow }) {
-  const audioRef = useRef<HTMLAudioElement>(null);
+  const mediaRef = useRef<HTMLMediaElement | null>(null);
   const [rate, setRate] = useState(1);
   const [showCorrect, setShowCorrect] = useState(false);
 
+  const isVideo = useMemo(() => dictationUrlLooksLikeVideo(row.audioUrl), [row.audioUrl]);
+
   useEffect(() => {
-    const el = audioRef.current;
+    const el = mediaRef.current;
     if (el) {
       el.playbackRate = rate;
     }
@@ -34,7 +42,27 @@ function DictationPlayer({ row }: { row: DictationRow }) {
     >
       <h3 className="font-medium text-[var(--studelio-text)]">{row.title}</h3>
       <div className="mt-3 space-y-3">
-        <audio ref={audioRef} className="w-full max-w-md" controls src={row.audioUrl} preload="metadata" />
+        {isVideo ? (
+          <video
+            ref={(el) => {
+              mediaRef.current = el;
+            }}
+            className="w-full max-w-md rounded-lg bg-black/5"
+            controls
+            src={row.audioUrl}
+            preload="metadata"
+          />
+        ) : (
+          <audio
+            ref={(el) => {
+              mediaRef.current = el;
+            }}
+            className="w-full max-w-md"
+            controls
+            src={row.audioUrl}
+            preload="metadata"
+          />
+        )}
         <div className="flex flex-wrap items-center gap-3 text-sm">
           <label className="flex items-center gap-2 text-muted-foreground">
             <span className="whitespace-nowrap">Vitesse</span>
@@ -86,8 +114,8 @@ export function ProgrammeDictationsSection({ dictations }: Props) {
     <section className="rounded-[20px] border border-[var(--studelio-border)] bg-card p-6 shadow-[var(--studelio-shadow)] sm:p-8">
       <h2 className="font-display text-lg font-semibold text-[var(--studelio-text)]">Dictées</h2>
       <p className="mt-2 max-w-2xl text-sm text-[var(--studelio-text-body)]">
-        Écoute l’audio (vitesse réglable), écris sur ta feuille ou dans ta tête, puis compare avec le corrigé quand tu es
-        prêt·e. André peut aussi te proposer ces dictées en séance programme.
+        Écoute ou regarde le média (vitesse réglable), écris ta dictée, puis compare avec le corrigé quand tu es prêt·e. Les
+        fichiers MP3 et MP4 (piste audio) sont pris en charge. André peut aussi te proposer ces dictées en séance programme.
       </p>
       <ul className="mt-6 space-y-6">
         {sorted.map((d) => (

@@ -4,8 +4,10 @@ import { createUploadthing, type FileRouter } from "uploadthing/next";
 const f = createUploadthing();
 
 export const ourFileRouter = {
-  dictationAudio: f({
+  /** MP3, M4A, etc. + MP4 (piste audio / vidéo lue dans l’app élève). */
+  dictationMedia: f({
     audio: { maxFileSize: "64MB", maxFileCount: 1 },
+    video: { maxFileSize: "256MB", maxFileCount: 1 },
   })
     .middleware(async () => {
       const session = await auth();

@@ -10,7 +10,7 @@ import {
   deleteProgrammeDictationAction,
   updateProgrammeDictationAction,
 } from "@/actions/admin-dictation";
-import { DictationAudioUploadButton } from "@/lib/uploadthing-components";
+import { DictationMediaUploadButton } from "@/lib/uploadthing-components";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,20 +51,11 @@ function CreateForm({ programmeId }: { programmeId: string }) {
         <Input id="new-title" name="title" required placeholder="Dictée n°3 — accord du participe passé" />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="new-audioUrl">URL de l’audio</Label>
-        <Input
-          id="new-audioUrl"
-          name="audioUrl"
-          required
-          type="url"
-          value={audioUrl}
-          onChange={(e) => setAudioUrl(e.target.value)}
-          placeholder="https://…"
-        />
+        <Label>Fichier dictée (.mp3, .m4a, .mp4…)</Label>
         {uploadConfigured ? (
-          <div className="flex flex-wrap items-center gap-2 pt-1">
-            <DictationAudioUploadButton
-              endpoint="dictationAudio"
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+            <DictationMediaUploadButton
+              endpoint="dictationMedia"
               onClientUploadComplete={(res) => {
                 const u = res[0]?.url;
                 if (u) setAudioUrl(u);
@@ -74,15 +65,29 @@ function CreateForm({ programmeId }: { programmeId: string }) {
                 allowedContent: "text-xs text-muted-foreground",
               }}
             />
-            <span className="text-xs text-muted-foreground">Upload admin (fichier audio)</span>
+            <span className="text-xs text-muted-foreground">
+              Le fichier est hébergé sur Uploadthing ; l’URL est remplie automatiquement ci-dessous.
+            </span>
           </div>
         ) : (
           <p className="text-xs text-muted-foreground">
-            Pour uploader depuis l’interface : ajoute <code className="rounded bg-muted px-1">NEXT_PUBLIC_UPLOADTHING_APP_ID</code>{" "}
-            (même valeur que chez Uploadthing) + clés serveur dans <code className="rounded bg-muted px-1">.env</code>. Sinon colle
-            une URL hébergée ailleurs.
+            Pour <strong>joindre un fichier</strong> : configure{" "}
+            <code className="rounded bg-muted px-1">NEXT_PUBLIC_UPLOADTHING_APP_ID</code> (identique au dashboard Uploadthing) et
+            les clés serveur dans <code className="rounded bg-muted px-1">.env</code>. Sinon indique une URL directe.
           </p>
         )}
+        <Label htmlFor="new-audioUrl" className="pt-2">
+          URL du média (remplie après upload, ou saisie manuelle)
+        </Label>
+        <Input
+          id="new-audioUrl"
+          name="audioUrl"
+          required
+          type="url"
+          value={audioUrl}
+          onChange={(e) => setAudioUrl(e.target.value)}
+          placeholder="https://… (obligatoire pour enregistrer)"
+        />
       </div>
       <div className="space-y-2">
         <Label htmlFor="new-correctedText">Texte corrigé (référence officielle)</Label>
@@ -137,12 +142,11 @@ function EditRow({ programmeId, row }: { programmeId: string; row: Row }) {
           <Label>Titre</Label>
           <Input name="title" required defaultValue={row.title} />
         </div>
-        <div className="space-y-1">
-          <Label>URL audio</Label>
-          <Input name="audioUrl" required type="url" value={audioUrl} onChange={(e) => setAudioUrl(e.target.value)} />
+        <div className="space-y-2">
+          <Label>Fichier (.mp3, .mp4…)</Label>
           {uploadConfigured ? (
-            <DictationAudioUploadButton
-              endpoint="dictationAudio"
+            <DictationMediaUploadButton
+              endpoint="dictationMedia"
               onClientUploadComplete={(res) => {
                 const u = res[0]?.url;
                 if (u) setAudioUrl(u);
@@ -153,6 +157,8 @@ function EditRow({ programmeId, row }: { programmeId: string; row: Row }) {
               }}
             />
           ) : null}
+          <Label className="text-xs font-normal text-muted-foreground">URL du média</Label>
+          <Input name="audioUrl" required type="url" value={audioUrl} onChange={(e) => setAudioUrl(e.target.value)} />
         </div>
         <div className="space-y-1">
           <Label>Texte corrigé</Label>
