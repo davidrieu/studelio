@@ -1,10 +1,18 @@
 "use client";
 
+import { BookMarked, Info, MessageCircle, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChatMarkdown } from "@/components/chat-markdown";
+import { IconTooltipAction } from "@/components/icon-tooltip-action";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+
+export type ProgrammeSeanceContextBanner = {
+  programmeTitle: string;
+  niveauLabel: string;
+  sourceDetail: string;
+};
 
 const STORAGE_KEY = "studelio.programmeGuidedSessionId";
 
@@ -79,7 +87,11 @@ async function consumeChatStream(
   return { assistant, receivedDone, streamError };
 }
 
-export function ProgrammeGuidedSession() {
+type SessionProps = {
+  contextBanner: ProgrammeSeanceContextBanner;
+};
+
+export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessageRow[]>([]);
   const [input, setInput] = useState("");
@@ -90,6 +102,8 @@ export function ProgrammeGuidedSession() {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const startedRef = useRef(false);
+
+  const userHasReplied = useMemo(() => messages.some((m) => m.role === "USER"), [messages]);
 
   const scrollDown = useCallback(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -265,32 +279,71 @@ export function ProgrammeGuidedSession() {
 
   return (
     <div className="flex min-h-[calc(100vh-6rem)] flex-col rounded-[20px] border border-[var(--studelio-border)] bg-gradient-to-b from-[var(--studelio-bg-soft)] to-card shadow-[var(--studelio-shadow)]">
-      <header className="flex flex-col gap-3 border-b border-[var(--studelio-border)] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <div>
-          <p className="font-display text-lg font-semibold text-[var(--studelio-text)]">Séance programme</p>
-          <p className="text-xs text-muted-foreground">
-            André mène : plan, exercices et niveau de difficulté s’adaptent à toi. Réponds aux consignes — tu ne choisis
-            pas le thème.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="outline" className="rounded-full" onClick={() => newSession()}>
-            Nouvelle séance
-          </Button>
-          <Link
-            href="/app/programme"
-            className={cn(buttonVariants({ variant: "ghost" }), "inline-flex rounded-full")}
-          >
-            Mon parcours
-          </Link>
-          <Link
-            href="/app/andre"
-            className={cn(buttonVariants({ variant: "ghost" }), "inline-flex rounded-full")}
-          >
-            Chat libre avec André
-          </Link>
+      <header className="border-b border-[var(--studelio-border)] px-4 py-4 sm:px-6">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="font-display text-lg font-semibold text-[var(--studelio-text)]">Séance programme</p>
+            <p className="text-xs text-muted-foreground">
+              André mène : plan, exercices et difficulté s’adaptent à toi. Réponds aux consignes — tu ne choisis pas le
+              thème.
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            <IconTooltipAction label="Nouvelle séance">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="rounded-full"
+                aria-label="Nouvelle séance"
+                onClick={() => newSession()}
+              >
+                <Sparkles className="size-4" />
+              </Button>
+            </IconTooltipAction>
+            <IconTooltipAction label="Mon parcours (radar & chapitres)">
+              <Link
+                href="/app/programme"
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "icon" }),
+                  "inline-flex rounded-full text-[var(--studelio-text-body)]",
+                )}
+                aria-label="Mon parcours — radar et chapitres"
+              >
+                <BookMarked className="size-4" />
+              </Link>
+            </IconTooltipAction>
+            <IconTooltipAction label="Chat libre avec André">
+              <Link
+                href="/app/andre"
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "icon" }),
+                  "inline-flex rounded-full text-[var(--studelio-text-body)]",
+                )}
+                aria-label="Chat libre avec André"
+              >
+                <MessageCircle className="size-4" />
+              </Link>
+            </IconTooltipAction>
+          </div>
         </div>
       </header>
+
+      {contextBanner && !userHasReplied ? (
+        <div className="border-b border-[var(--studelio-border)]/60 bg-gradient-to-r from-[var(--studelio-blue-dim)]/35 via-transparent to-transparent px-4 py-2.5 sm:px-6">
+          <div
+            className="flex gap-2.5 rounded-xl border border-[var(--studelio-border)]/50 bg-card/70 px-3 py-2 shadow-sm backdrop-blur-sm"
+            role="status"
+          >
+            <Info className="mt-0.5 size-4 shrink-0 text-[var(--studelio-blue)] opacity-90" aria-hidden />
+            <p className="text-[11px] leading-snug text-muted-foreground sm:text-xs sm:leading-relaxed">
+              <span className="font-medium text-[var(--studelio-text)]">Référence de cette séance · </span>
+              « {contextBanner.programmeTitle} » ({contextBanner.niveauLabel}). André s’appuie sur{" "}
+              <span className="font-medium text-[var(--studelio-text-body)]">{contextBanner.sourceDetail}</span>.
+            </p>
+          </div>
+        </div>
+      ) : null}
 
       <div className="flex flex-1 flex-col overflow-hidden">
         <div className="flex-1 space-y-4 overflow-y-auto px-4 py-6 sm:px-8">
