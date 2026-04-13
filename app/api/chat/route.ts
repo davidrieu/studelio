@@ -7,6 +7,7 @@ import { buildAndreSystemPrompt } from "@/lib/andre-prompt";
 import { andreModel, getAnthropic } from "@/lib/anthropic";
 import { formatLoadedFolderForPrompt, loadProgrammeFolderForNiveau } from "@/lib/programme-folder-loader";
 import { niveauLabel } from "@/lib/labels";
+import { formatDictationsForGuidedPrompt } from "@/lib/dictation-prompt";
 import { prisma } from "@/lib/prisma";
 import { MINUTES_PER_CHAT_ROUND, recordStudentActivity } from "@/lib/record-student-activity";
 
@@ -227,6 +228,17 @@ export async function POST(req: Request) {
           .join("\n\n")
       : null;
 
+  let dictationsSummary: string | null = null;
+  if (isGuided && programmeForPrompt?.id) {
+    const dictRows = await prisma.programmeDictation.findMany({
+      where: { programmeId: programmeForPrompt.id },
+      orderBy: { order: "asc" },
+      select: { id: true, title: true },
+    });
+    const formatted = formatDictationsForGuidedPrompt(dictRows);
+    dictationsSummary = formatted.trim().length > 0 ? formatted : null;
+  }
+
   const system = isGuided
     ? buildProgrammeGuidedSystemPrompt({
         studentFirstName: firstName,
@@ -237,6 +249,7 @@ export async function POST(req: Request) {
         programme: programmeCtx,
         chapterProgressSummary,
         recentFreeChatDigest: recentDigest,
+        dictationsSummary,
       })
     : buildAndreSystemPrompt({
         studentFirstName: firstName,

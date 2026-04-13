@@ -20,6 +20,10 @@ export default async function ProgrammePage() {
       programme: {
         include: {
           chapters: { orderBy: { order: "asc" } },
+          dictations: {
+            orderBy: { order: "asc" },
+            select: { id: true, title: true, audioUrl: true, correctedText: true, order: true },
+          },
         },
       },
     },
@@ -44,6 +48,10 @@ export default async function ProgrammePage() {
           programme: {
             include: {
               chapters: { orderBy: { order: "asc" } },
+              dictations: {
+                orderBy: { order: "asc" },
+                select: { id: true, title: true, audioUrl: true, correctedText: true, order: true },
+              },
             },
           },
         },
@@ -91,6 +99,7 @@ export default async function ProgrammePage() {
     <StudentProgramme
       programmeTitle={prog.title}
       programmeDescription={prog.description}
+      dictations={prog.dictations ?? []}
       chapters={chapters.map((c) => ({
         id: c.id,
         order: c.order,

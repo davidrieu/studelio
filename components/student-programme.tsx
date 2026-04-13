@@ -12,6 +12,8 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { setChapterProgress } from "@/actions/programme";
+import type { DictationRow } from "@/components/programme-dictations";
+import { ProgrammeDictationsSection } from "@/components/programme-dictations";
 import { buttonVariants } from "@/components/ui/button";
 import { chapterProgressLabel } from "@/lib/labels";
 import {
@@ -33,11 +35,18 @@ type Chapter = ProgrammeChapterForRadar & {
 type Props = {
   programmeTitle: string;
   programmeDescription: string | null;
+  dictations?: DictationRow[];
   chapters: Chapter[];
   initialProgress: ProgressByChapter;
 };
 
-export function StudentProgramme({ programmeTitle, programmeDescription, chapters, initialProgress }: Props) {
+export function StudentProgramme({
+  programmeTitle,
+  programmeDescription,
+  dictations = [],
+  chapters,
+  initialProgress,
+}: Props) {
   const [progress, setProgress] = useState<ProgressByChapter>(initialProgress);
   const [err, setErr] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -86,6 +95,8 @@ export function StudentProgramme({ programmeTitle, programmeDescription, chapter
           Entrer dans la séance
         </Link>
       </section>
+
+      <ProgrammeDictationsSection dictations={dictations} />
 
       <header className="rounded-[20px] border border-[var(--studelio-border)] bg-gradient-to-br from-[var(--studelio-bg-soft)] to-[var(--studelio-bg-muted)] p-6 shadow-[var(--studelio-shadow)] sm:p-8">
         <h1 className="font-display text-2xl font-semibold text-[var(--studelio-text)]">{programmeTitle}</h1>

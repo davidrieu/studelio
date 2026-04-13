@@ -206,15 +206,32 @@ model Attachment {
 }
 
 model Programme {
-  id          String             @id @default(cuid())
-  niveau      Niveau             @unique
+  id          String              @id @default(cuid())
+  niveau      Niveau              @unique
   title       String
   description String?
   /// Consignes pédagogiques pour l’IA (souvent importées depuis content/programmes/{NIVEAU}.md au seed).
-  aiBrief     String?            @db.Text
+  aiBrief     String?             @db.Text
   chapters    ProgrammeChapter[]
+  dictations  ProgrammeDictation[]
   students    StudentProfile[]
-  updatedAt   DateTime           @updatedAt
+  updatedAt   DateTime            @updatedAt
+}
+
+/// Dictée : audio + texte corrigé (géré dans le backoffice). Le corrigé n’est pas injecté dans le prompt LLM.
+model ProgrammeDictation {
+  id            String    @id @default(cuid())
+  programmeId   String
+  programme     Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+  title         String
+  /// URL publique (mp3, m4a, wav, etc.) — ex. Uploadthing ou hébergeur externe.
+  audioUrl      String
+  correctedText String    @db.Text
+  order         Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([programmeId, order])
 }
 
 model ProgrammeChapter {
