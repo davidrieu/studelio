@@ -3,24 +3,10 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
-import type { Role } from "@prisma/client";
-import { fetchAuthSession } from "@/lib/auth-session-client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-function homeForRole(role: Role | undefined): string {
-  switch (role) {
-    case "PARENT":
-      return "/parent/dashboard";
-    case "ADMIN":
-    case "CORRECTOR":
-      return "/admin/dashboard";
-    default:
-      return "/app/dashboard";
-  }
-}
 
 export function LoginForm() {
   const searchParams = useSearchParams();
@@ -58,28 +44,19 @@ export function LoginForm() {
         return;
       }
 
-      const session = await fetchAuthSession();
-      const role = session?.user?.role as Role | undefined;
-      if (!session?.user?.id) {
-        setError(
-          "La connexion semble réussir mais aucune session n’est enregistrée (cookie bloqué ou configuration serveur). Vérifie sur Vercel que AUTH_SECRET et AUTH_URL correspondent exactement à ton site, puis réessaie ou teste en navigation privée.",
-        );
-        return;
+      // Navigation complète : la session est lue côté serveur sur /auth/post-login (évite la course
+      // client cookie / session après signIn avec redirect: false — souvent visible pour les admins).
+      const params = new URLSearchParams();
+      if (
+        requestedCallback &&
+        requestedCallback.startsWith("/") &&
+        !requestedCallback.startsWith("//") &&
+        !requestedCallback.includes("://")
+      ) {
+        params.set("next", requestedCallback);
       }
-
-      const fallback = homeForRole(role);
-      let target = fallback;
-      if (requestedCallback && role === "STUDENT" && requestedCallback.startsWith("/app")) {
-        target = requestedCallback;
-      }
-      if (requestedCallback && role === "PARENT" && requestedCallback.startsWith("/parent")) {
-        target = requestedCallback;
-      }
-      if (requestedCallback && (role === "ADMIN" || role === "CORRECTOR") && requestedCallback.startsWith("/admin")) {
-        target = requestedCallback;
-      }
-
-      window.location.assign(target);
+      const q = params.toString();
+      window.location.assign(`${origin}/auth/post-login${q ? `?${q}` : ""}`);
     } catch {
       setError("Une erreur technique est survenue pendant la connexion. Actualise la page et réessaie.");
     } finally {
@@ -108,6 +85,13 @@ export function LoginForm() {
           ) : null}
           {searchParams.get("session") === "required" ? (
             <p className="text-sm text-muted-foreground">Identifie-toi pour accéder à cette page.</p>
+          ) : null}
+          {searchParams.get("error") === "session" ? (
+            <p className="text-sm text-destructive">
+              La session n’a pas été reconnue après la connexion. Réessaie : si ça persiste, vérifie en navigation
+              privée ou les variables Vercel <span className="font-mono">AUTH_SECRET</span> /{" "}
+              <span className="font-mono">AUTH_URL</span>.
+            </p>
           ) : null}
           {searchParams.get("error") === "Configuration" ? (
             <p className="text-sm text-destructive">

@@ -8,7 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { registerAction } from "@/actions/auth";
-import { fetchAuthSession } from "@/lib/auth-session-client";
 
 const niveaux = [
   { value: "SIXIEME", label: "6e" },
@@ -65,16 +64,8 @@ export function RegisterForm() {
         return;
       }
 
-      const session = await fetchAuthSession();
-      if (!session?.user?.id) {
-        setError(
-          "Compte créé, mais la session n’a pas été enregistrée (cookies ou variables Vercel : AUTH_SECRET, AUTH_URL). Connecte-toi à la main ou réessaie en navigation privée.",
-        );
-        router.push("/auth/login");
-        return;
-      }
-
-      window.location.assign(registerRes.redirect);
+      const next = encodeURIComponent(registerRes.redirect);
+      window.location.assign(`${origin}/auth/post-login?next=${next}`);
     } catch {
       setError("Une erreur technique est survenue après l’inscription. Réessaie ou connecte-toi manuellement.");
       router.push("/auth/login");
