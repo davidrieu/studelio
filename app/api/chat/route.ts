@@ -1,6 +1,8 @@
 import type { MessageParam, TextBlock } from "@anthropic-ai/sdk/resources/messages";
+import type { ChatSessionKind } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { buildProgrammeGuidedSystemPrompt } from "@/lib/andre-prompt-guided";
 import { buildAndreSystemPrompt } from "@/lib/andre-prompt";
 import { andreModel, getAnthropic } from "@/lib/anthropic";
 import { formatLoadedFolderForPrompt, loadProgrammeFolderForNiveau } from "@/lib/programme-folder-loader";
@@ -13,6 +15,9 @@ export const maxDuration = 60;
 
 const MAX_USER_CHARS = 12_000;
 const MAX_HISTORY_MESSAGES = 32;
+
+/** Déclencheur interne : l’élève n’a rien écrit ; André ouvre la séance. */
+const PROGRAMME_GUIDED_BOOTSTRAP_USER = `[Ouverture de séance « Programme guidé ». L’élève vient d’entrer dans l’interface immersive : il n’a pas encore écrit. Accueille-le brièvement (ton cool et rassurant), expose en 2–4 phrases le plan de travail que tu vas mener (en t’appuyant sur le programme et son profil), puis propose immédiatement le premier exercice concret avec une seule consigne claire — sans lui demander de choisir un thème ni un chapitre.]`;
 
 function extractAssistantText(message: { content: unknown[] }): string {
   const blocks = message.content.filter((b): b is TextBlock => (b as TextBlock).type === "text");
@@ -33,15 +38,24 @@ export async function POST(req: Request) {
     );
   }
 
-  let body: { sessionId?: string | null; message?: string };
+  let body: {
+    sessionId?: string | null;
+    message?: string;
+    mode?: string;
+    bootstrap?: boolean;
+  };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "JSON invalide." }, { status: 400 });
   }
 
+  const mode: ChatSessionKind = body.mode === "programme_guided" ? "PROGRAMME_GUIDED" : "FREE";
+  const isGuided = mode === "PROGRAMME_GUIDED";
+  const isBootstrap = isGuided && body.bootstrap === true && !body.sessionId;
+
   const raw = typeof body.message === "string" ? body.message.trim() : "";
-  if (!raw) {
+  if (!isBootstrap && !raw) {
     return NextResponse.json({ error: "Message vide." }, { status: 400 });
   }
   if (raw.length > MAX_USER_CHARS) {
@@ -57,7 +71,7 @@ export async function POST(req: Request) {
             include: {
               chapters: {
                 orderBy: { order: "asc" },
-                select: { order: true, title: true, objectives: true },
+                select: { id: true, order: true, title: true, objectives: true },
               },
             },
           },
@@ -79,7 +93,7 @@ export async function POST(req: Request) {
       include: {
         chapters: {
           orderBy: { order: "asc" },
-          select: { order: true, title: true, objectives: true },
+          select: { id: true, order: true, title: true, objectives: true },
         },
       },
     });
@@ -94,9 +108,11 @@ export async function POST(req: Request) {
         return `${c.order}. **${c.title}**${obj}`;
       })
       .join("\n") ?? "";
+
   const firstName = userRow.name?.split(/\s+/)[0] ?? "toi";
 
   let chatSessionId = body.sessionId?.trim() || null;
+
   if (chatSessionId) {
     const existing = await prisma.chatSession.findFirst({
       where: { id: chatSessionId, userId: session.user.id },
@@ -104,27 +120,33 @@ export async function POST(req: Request) {
     if (!existing) {
       return NextResponse.json({ error: "Session invalide." }, { status: 400 });
     }
+    if (existing.kind !== mode) {
+      return NextResponse.json({ error: "Session incompatible avec ce mode." }, { status: 400 });
+    }
   } else {
     const created = await prisma.chatSession.create({
       data: {
         userId: session.user.id,
         niveau: sp.niveau,
-        subject: raw.slice(0, 120),
+        subject: isGuided ? "Séance programme guidée" : raw.slice(0, 120),
+        kind: mode,
       },
     });
     chatSessionId = created.id;
   }
 
-  await prisma.chatMessage.create({
-    data: {
-      sessionId: chatSessionId,
-      role: "USER",
-      content: raw,
-    },
-  });
+  if (!isBootstrap) {
+    await prisma.chatMessage.create({
+      data: {
+        sessionId: chatSessionId!,
+        role: "USER",
+        content: raw,
+      },
+    });
+  }
 
   const historyRows = await prisma.chatMessage.findMany({
-    where: { sessionId: chatSessionId },
+    where: { sessionId: chatSessionId! },
     orderBy: { createdAt: "asc" },
     take: MAX_HISTORY_MESSAGES,
   });
@@ -138,23 +160,65 @@ export async function POST(req: Request) {
     }
   }
 
+  if (isBootstrap) {
+    anthropicMessages.push({ role: "user", content: PROGRAMME_GUIDED_BOOTSTRAP_USER });
+  }
+
   const folderLoad = loadProgrammeFolderForNiveau(sp.niveau, process.cwd());
   const aiBriefEffective = folderLoad
     ? formatLoadedFolderForPrompt(folderLoad)
     : programmeForPrompt?.aiBrief ?? null;
 
+  const programmeTitle = programmeForPrompt?.title ?? `Français — ${niveauLabel[sp.niveau]}`;
+  const showProgramme = Boolean(folderLoad || programmeForPrompt);
+
+  const programmeCtx = showProgramme
+    ? {
+        title: programmeTitle,
+        aiBrief: aiBriefEffective,
+        chapterThemes,
+        fromFolder: Boolean(folderLoad),
+      }
+    : null;
+
+  let chapterProgressSummary = "";
+  if (isGuided && programmeForPrompt?.chapters?.length) {
+    const progressRows = await prisma.studentChapterProgress.findMany({
+      where: {
+        studentProfileId: sp.id,
+        chapterId: { in: programmeForPrompt.chapters.map((c) => c.id) },
+      },
+    });
+    const pmap = new Map(progressRows.map((r) => [r.chapterId, r.status]));
+    chapterProgressSummary = programmeForPrompt.chapters
+      .map((c) => {
+        const st = pmap.get(c.id) ?? "NOT_STARTED";
+        return `- Chapitre ${c.order} — ${c.title} — **${st}**`;
+      })
+      .join("\n");
+  }
+
+  const recentWhere =
+    isGuided
+      ? {
+          role: "ANDRE" as const,
+          session: { userId: session.user.id, kind: "FREE" as const },
+          NOT: { sessionId: chatSessionId! },
+        }
+      : {
+          role: "ANDRE" as const,
+          session: { userId: session.user.id },
+          NOT: { sessionId: chatSessionId! },
+        };
+
   const recentAndreRows = await prisma.chatMessage.findMany({
-    where: {
-      role: "ANDRE",
-      session: { userId: session.user.id },
-      NOT: { sessionId: chatSessionId! },
-    },
+    where: recentWhere,
     orderBy: { createdAt: "desc" },
     take: 10,
     select: { content: true },
   });
 
-  const recentAndreDigest =
+  const recentDigest =
     recentAndreRows.length > 0
       ? recentAndreRows
           .reverse()
@@ -162,25 +226,26 @@ export async function POST(req: Request) {
           .join("\n\n")
       : null;
 
-  const programmeTitle = programmeForPrompt?.title ?? `Français — ${niveauLabel[sp.niveau]}`;
-  const showProgramme = Boolean(folderLoad || programmeForPrompt);
-
-  const system = buildAndreSystemPrompt({
-    studentFirstName: firstName,
-    niveau: sp.niveau,
-    niveauLabel: niveauLabel[sp.niveau],
-    interests: sp.interests,
-    tags: sp.tags,
-    programme: showProgramme
-      ? {
-          title: programmeTitle,
-          aiBrief: aiBriefEffective,
-          chapterThemes,
-          fromFolder: Boolean(folderLoad),
-        }
-      : null,
-    recentAndreDigest,
-  });
+  const system = isGuided
+    ? buildProgrammeGuidedSystemPrompt({
+        studentFirstName: firstName,
+        niveau: sp.niveau,
+        niveauLabel: niveauLabel[sp.niveau],
+        interests: sp.interests,
+        tags: sp.tags,
+        programme: programmeCtx,
+        chapterProgressSummary,
+        recentFreeChatDigest: recentDigest,
+      })
+    : buildAndreSystemPrompt({
+        studentFirstName: firstName,
+        niveau: sp.niveau,
+        niveauLabel: niveauLabel[sp.niveau],
+        interests: sp.interests,
+        tags: sp.tags,
+        programme: programmeCtx,
+        recentAndreDigest: recentDigest,
+      });
 
   const encoder = new TextEncoder();
   const sse = (obj: object) => encoder.encode(`data: ${JSON.stringify(obj)}\n\n`);
@@ -203,7 +268,6 @@ export async function POST(req: Request) {
           max_tokens: 4096,
           system,
           messages: anthropicMessages,
-          // Évite les blocs « thinking » sans texte visible (Sonnet 4.6 + streaming).
           thinking: { type: "disabled" },
         });
 

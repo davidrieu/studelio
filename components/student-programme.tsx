@@ -1,6 +1,7 @@
 "use client";
 
 import type { ChapterProgressStatus } from "@prisma/client";
+import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import {
   PolarAngleAxis,
@@ -11,6 +12,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { setChapterProgress } from "@/actions/programme";
+import { buttonVariants } from "@/components/ui/button";
 import { chapterProgressLabel } from "@/lib/labels";
 import {
   buildSkillRadarData,
@@ -70,6 +72,21 @@ export function StudentProgramme({ programmeTitle, programmeDescription, chapter
 
   return (
     <div className="space-y-8">
+      <section className="rounded-[20px] border-2 border-[var(--studelio-blue)]/25 bg-gradient-to-br from-[var(--studelio-blue-dim)] to-card p-6 shadow-[var(--studelio-shadow)] sm:p-8">
+        <h2 className="font-display text-xl font-semibold text-[var(--studelio-text)]">Séance programme (immersif)</h2>
+        <p className="mt-2 max-w-2xl text-sm text-[var(--studelio-text-body)]">
+          André mène la séance : plan d’exercices selon ton niveau et tes difficultés, difficulté réajustée après chaque
+          réponse. Tu ne choisis pas le thème — tu réponds aux consignes. Le chat « André » du menu reste libre pour tes
+          questions.
+        </p>
+        <Link
+          href="/app/programme/seance"
+          className={cn(buttonVariants(), "mt-5 inline-flex rounded-full")}
+        >
+          Entrer dans la séance
+        </Link>
+      </section>
+
       <header className="rounded-[20px] border border-[var(--studelio-border)] bg-gradient-to-br from-[var(--studelio-bg-soft)] to-[var(--studelio-bg-muted)] p-6 shadow-[var(--studelio-shadow)] sm:p-8">
         <h1 className="font-display text-2xl font-semibold text-[var(--studelio-text)]">{programmeTitle}</h1>
         {programmeDescription ? (

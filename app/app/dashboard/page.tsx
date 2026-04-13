@@ -113,8 +113,8 @@ export default async function StudentDashboardPage({
         <Link href="/app/andre" className={cn(buttonVariants(), "rounded-full")}>
           Parler à André
         </Link>
-        <Link href="/app/programme" className={cn(buttonVariants({ variant: "outline" }), "rounded-full")}>
-          Mon programme
+        <Link href="/app/programme/seance" className={cn(buttonVariants({ variant: "outline" }), "rounded-full")}>
+          Ma séance programme
         </Link>
         <Link href="/app/bac-blanc" className={cn(buttonVariants({ variant: "outline" }), "rounded-full")}>
           Bacs blancs

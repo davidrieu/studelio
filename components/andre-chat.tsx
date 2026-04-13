@@ -44,7 +44,7 @@ export function AndreChat() {
 
   const loadSessions = useCallback(async () => {
     try {
-      const res = await fetch("/api/chat/sessions", { credentials: "include" });
+      const res = await fetch("/api/chat/sessions?kind=FREE", { credentials: "include" });
       if (!res.ok) return;
       const data = (await res.json()) as { sessions?: SessionRow[] };
       setSessions(data.sessions ?? []);
@@ -112,7 +112,7 @@ export function AndreChat() {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId, message: text }),
+        body: JSON.stringify({ sessionId, message: text, mode: "free" }),
       });
 
       if (res.status === 503) {
