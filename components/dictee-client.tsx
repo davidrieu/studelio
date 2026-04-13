@@ -99,8 +99,9 @@ function DicteeList({ dictations }: { dictations: DictationRow[] }) {
     <div className="rounded-[20px] border border-[var(--studelio-border)] bg-card p-6 shadow-[var(--studelio-shadow)] sm:p-8">
       <h2 className="font-display text-lg font-semibold text-[var(--studelio-text)]">Choisir une dictée</h2>
       <p className="mt-2 max-w-2xl text-sm text-[var(--studelio-text-body)]">
-        Tu écoutes l’audio, tu écris, puis tu envoies ton texte à André. Il a le corrigé en interne : il t’aide sans te
-        le donner mot pour mot, et peut te proposer une note sur 20.
+        Tu écoutes l’audio, tu tapes ta dictée dans le champ sous la conversation, puis tu envoies. André a le corrigé
+        en interne : il t’aide sans te le donner mot pour mot, et peut te proposer une note sur 20. Pas de photos ni
+        fichiers pour l’instant.
       </p>
       <ul className="mt-6 space-y-3">
         {sorted.map((d) => (
@@ -392,8 +393,10 @@ function DicteeSessionPane({ dictation }: { dictation: DictationRow }) {
         </div>
         <DicteeMedia row={dictation} />
         <p className="text-xs text-muted-foreground">
-          Écoute autant de fois que nécessaire, puis colle ou tape ta dictée dans le chat. Tu ne verras pas le texte
-          officiel ici — André le compare en coulisse.
+          Écoute autant de fois que nécessaire, puis écris ta dictée{" "}
+          <strong className="font-medium text-[var(--studelio-text-body)]">directement</strong> dans le champ de texte
+          sous la conversation (pas besoin de papier ni d’un autre document). Pas d’envoi de photo ou de fichier pour
+          l’instant. Tu ne verras pas le texte officiel — André le compare en coulisse.
         </p>
       </aside>
 
@@ -465,7 +468,7 @@ function DicteeSessionPane({ dictation }: { dictation: DictationRow }) {
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Colle ou tape ta dictée ici…"
+                placeholder="Écris ta dictée ici (directement dans ce champ)…"
                 rows={4}
                 disabled={sending || bootstrapping || !sessionId}
                 className={cn(

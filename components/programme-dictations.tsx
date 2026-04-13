@@ -109,8 +109,9 @@ export function ProgrammeDictationsSection({ dictations }: Props) {
       <h2 className="font-display text-lg font-semibold text-[var(--studelio-text)]">Dictées</h2>
       <p className="mt-2 max-w-2xl text-sm text-[var(--studelio-text-body)]">
         Écoute le média (vitesse réglable), puis va dans l’onglet <strong className="font-medium">Dictée</strong> ou clique
-        « Faire avec André » : tu colleras ton texte dans le chat — André a le corrigé en interne et t’aide sans te le
-        donner mot pour mot. MP3 et MP4 (piste audio) sont pris en charge.
+        « Faire avec André » : tu tapes ta dictée dans le champ de texte sur la page Dictée — André a le corrigé en
+        interne et t’aide sans te le donner mot pour mot (pas de photo ni fichier). MP3 et MP4 (piste audio) sont pris en
+        charge.
       </p>
       <ul className="mt-6 space-y-6">
         {sorted.map((d) => (

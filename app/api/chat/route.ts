@@ -21,7 +21,7 @@ const MAX_HISTORY_MESSAGES = 32;
 /** Déclencheur interne : l’élève n’a rien écrit ; André ouvre la séance. */
 const PROGRAMME_GUIDED_BOOTSTRAP_USER = `[Ouverture de séance « Programme guidé ». L’élève vient d’entrer dans l’interface immersive : il n’a pas encore écrit. Accueille-le brièvement (ton cool et rassurant), expose en 2–4 phrases le plan de travail que tu vas mener (en t’appuyant sur le programme et son profil), puis propose immédiatement le premier exercice concret avec une seule consigne claire — sans lui demander de choisir un thème ni un chapitre.]`;
 
-const DICTEE_BOOTSTRAP_USER = `[Ouverture dictée Studelio. L’élève a l’audio sur la page (lecteur, vitesse réglable). Il n’a pas encore envoyé son texte. Accueille-le brièvement, rappelle la consigne : écouter puis écrire, puis coller ou taper sa dictée ici pour que tu l’aides. Ne donne pas le texte officiel. Sois rassurant.]`;
+const DICTEE_BOOTSTRAP_USER = `[Ouverture dictée Studelio. L’élève a l’audio sur la page (lecteur, vitesse réglable). Il n’a pas encore envoyé son texte. Accueille-le brièvement, rappelle la consigne : il doit **écrire sa dictée directement dans le grand champ de texte sous la conversation** (zone prévue dans l’app), pas sur papier ni dans un autre document. Quand il a fini, il envoie avec le bouton. **Ne lui propose pas** d’envoyer une photo, une image ou un fichier : ce n’est pas possible dans l’app pour l’instant. Ne donne pas le texte officiel. Sois rassurant.]`;
 
 function extractAssistantText(message: { content: unknown[] }): string {
   const blocks = message.content.filter((b): b is TextBlock => (b as TextBlock).type === "text");
