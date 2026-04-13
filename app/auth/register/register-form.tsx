@@ -23,6 +23,8 @@ const niveaux = [
 export function RegisterForm() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]> | undefined>();
+  const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [kind, setKind] = useState<"student" | "parent">("student");
 
@@ -36,13 +38,20 @@ export function RegisterForm() {
     const registerRes = await registerAction(undefined, fd);
     if (!registerRes.ok) {
       setError(registerRes.message);
+      setFieldErrors(registerRes.fieldErrors);
       setLoading(false);
       return;
     }
+    setFieldErrors(undefined);
 
     const password = fd.get("password") as string;
     const origin = window.location.origin;
     const safeCallbackUrl = `${origin}/auth/register`;
+
+    const goPostLogin = () => {
+      const next = encodeURIComponent(registerRes.redirect);
+      window.location.assign(`${origin}/auth/post-login?next=${next}`);
+    };
 
     try {
       const sign = await signIn("credentials", {
@@ -64,8 +73,12 @@ export function RegisterForm() {
         return;
       }
 
-      const next = encodeURIComponent(registerRes.redirect);
-      window.location.assign(`${origin}/auth/post-login?next=${next}`);
+      if (registerRes.parentEmailNotice) {
+        setInfo(registerRes.parentEmailNotice);
+        window.setTimeout(goPostLogin, 3200);
+      } else {
+        goPostLogin();
+      }
     } catch {
       setError("Une erreur technique est survenue après l’inscription. Réessaie ou connecte-toi manuellement.");
       router.push("/auth/login");
@@ -93,9 +106,31 @@ export function RegisterForm() {
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{kind === "student" ? "Email de l’élève" : "Email"}</Label>
             <Input id="email" name="email" type="email" required autoComplete="email" />
           </div>
+          {kind === "student" ? (
+            <div className="space-y-2">
+              <Label htmlFor="parentEmail">Email du parent ou tuteur</Label>
+              <Input
+                id="parentEmail"
+                name="parentEmail"
+                type="email"
+                required
+                autoComplete="off"
+                placeholder="parent@exemple.com"
+                aria-invalid={Boolean(fieldErrors?.parentEmail?.length)}
+              />
+              {fieldErrors?.parentEmail?.[0] ? (
+                <p className="text-xs text-destructive">{fieldErrors.parentEmail[0]}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Un compte parent sera créé automatiquement (ou relié s’il existe déjà). Le parent recevra un email pour
+                  suivre ta progression.
+                </p>
+              )}
+            </div>
+          ) : null}
           <div className="space-y-2">
             <Label htmlFor="password">Mot de passe</Label>
             <Input id="password" name="password" type="password" required minLength={8} autoComplete="new-password" />
@@ -142,6 +177,14 @@ export function RegisterForm() {
                 ))}
               </select>
             </div>
+          ) : null}
+          {info ? (
+            <p
+              className="rounded-lg border border-[var(--studelio-green-dim)] bg-[var(--studelio-green-dim)]/40 px-3 py-2 text-sm text-[var(--studelio-text)]"
+              role="status"
+            >
+              {info}
+            </p>
           ) : null}
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
           <Button type="submit" className="w-full rounded-full" disabled={loading}>
