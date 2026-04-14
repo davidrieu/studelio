@@ -42,10 +42,13 @@ export default async function OnboardingPlanPage({
   return (
     <div className="mx-auto flex min-h-screen max-w-6xl flex-col justify-center gap-8 px-4 py-12">
       <div>
-        <h1 className="font-display text-3xl font-semibold text-[var(--studelio-text)]">Choix du plan</h1>
+        <h1 className="font-display text-3xl font-semibold text-[var(--studelio-text)]">
+          Choisis l’offre qui colle à ton objectif
+        </h1>
         <p className="mt-2 max-w-2xl text-[var(--studelio-text-body)]">
-          Sélectionne l’offre qui te convient. Le paiement est sécurisé par Stripe. Tu pourras gérer ton abonnement depuis
-          l’espace client Stripe après souscription.
+          Toutes les offres incluent <strong className="font-medium text-[var(--studelio-text)]">3 jours d’essai gratuits</strong>
+          . Après l’essai, facturation au tarif choisi — résilie avant la fin des 3 jours si tu ne souhaites pas continuer.
+          Paiement sécurisé par Stripe.
         </p>
       </div>
       <PlanPicker

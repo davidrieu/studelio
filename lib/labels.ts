@@ -37,8 +37,8 @@ export const tagLabel: Record<Tag, string> = {
 
 export const planLabel: Record<Plan, string> = {
   ESSENTIEL: "Essentiel",
-  STANDARD: "Standard",
-  INTENSIF: "Intensif",
+  STANDARD: "Progression",
+  INTENSIF: "Excellence",
 };
 
 export const chapterProgressLabel: Record<ChapterProgressStatus, string> = {

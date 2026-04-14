@@ -118,7 +118,8 @@ export default async function StudentDashboardPage({
           <p className="mt-2 text-sm text-muted-foreground">Aucune donnée d’abonnement.</p>
         )}
         <p className="mt-4 text-sm text-muted-foreground">
-          Le paiement Stripe et le passage en statut « Actif » arrivent à l’étape suivante du produit.
+          Les offres incluent 3 jours d’essai. Après paiement, le statut se met à jour en quelques secondes grâce à
+          Stripe (actualise si besoin).
         </p>
         <Link
           href="/onboarding/plan"
