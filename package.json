@@ -16,7 +16,8 @@
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
     "setup:local": "powershell -ExecutionPolicy Bypass -File scripts/setup-local.ps1",
-    "studelio": "powershell -ExecutionPolicy Bypass -File scripts/lancer-studelio.ps1"
+    "studelio": "powershell -ExecutionPolicy Bypass -File scripts/lancer-studelio.ps1",
+    "stripe:sync-products": "tsx scripts/stripe-sync-products.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
