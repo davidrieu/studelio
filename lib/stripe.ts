@@ -27,3 +27,8 @@ export function appOrigin(): string {
   const u = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "";
   return u.replace(/\/$/, "");
 }
+
+/** Identifiant client Stripe réel (après au moins un Checkout ou création API). */
+export function isStripeCustomerId(value: string | null | undefined): value is string {
+  return typeof value === "string" && value.startsWith("cus_");
+}

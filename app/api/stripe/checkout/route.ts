@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { Plan } from "@prisma/client";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { appOrigin, getPriceIdForPlan, getStripe } from "@/lib/stripe";
+import { appOrigin, getPriceIdForPlan, getStripe, isStripeCustomerId } from "@/lib/stripe";
 
 const plans: Plan[] = ["ESSENTIEL", "STANDARD", "INTENSIF"];
 
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
   }
 
   let customerId = subRow.stripeCustomerId;
-  if (customerId.startsWith("pending_")) {
+  if (!isStripeCustomerId(customerId)) {
     const customer = await stripe.customers.create({
       email: subRow.user.email ?? undefined,
       metadata: { userId: session.user.id },

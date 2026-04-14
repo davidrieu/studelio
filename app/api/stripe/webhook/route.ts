@@ -15,9 +15,9 @@ function priceIdFromSubscription(sub: Stripe.Subscription): string | undefined {
 }
 
 function periodEndFromSubscription(sub: Stripe.Subscription): Date | undefined {
-  const end = sub.items?.data?.[0]?.current_period_end;
-  if (typeof end !== "number") return undefined;
-  return new Date(end * 1000);
+  const doc = sub as unknown as { current_period_end?: number };
+  if (typeof doc.current_period_end !== "number") return undefined;
+  return new Date(doc.current_period_end * 1000);
 }
 
 function customerIdFromStripe(sub: Stripe.Subscription): string | undefined {
@@ -133,6 +133,24 @@ export async function POST(req: Request) {
                 ? row.currentPeriodEnd
                 : nextPeriodEnd ?? row.currentPeriodEnd,
           },
+        });
+        break;
+      }
+      case "invoice.payment_failed": {
+        const inv = event.data.object as Stripe.Invoice;
+        const invSub = inv as unknown as { subscription?: string | { id: string } | null };
+        const ref = invSub.subscription;
+        const subId =
+          typeof ref === "string" ? ref : ref && typeof ref === "object" && "id" in ref ? ref.id : undefined;
+        if (!subId) break;
+        const row = await prisma.subscription.findFirst({
+          where: { stripeSubscriptionId: subId },
+          select: { userId: true },
+        });
+        if (!row) break;
+        await prisma.subscription.update({
+          where: { userId: row.userId },
+          data: { status: "PAST_DUE" },
         });
         break;
       }

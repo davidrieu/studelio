@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { appOrigin, getStripe } from "@/lib/stripe";
+import { appOrigin, getStripe, isStripeCustomerId } from "@/lib/stripe";
 import { planIncludesBlancInSubscription, subscriptionGrantsAppAccess } from "@/lib/subscription-entitlement";
 
 const AMOUNT_SLOT_CENTS = 1500;
@@ -61,7 +61,7 @@ export async function POST(req: Request) {
 
   let customerId: string | undefined;
   const cid = userRow.subscription.stripeCustomerId;
-  if (cid && !cid.startsWith("pending_")) {
+  if (isStripeCustomerId(cid)) {
     customerId = cid;
   }
 

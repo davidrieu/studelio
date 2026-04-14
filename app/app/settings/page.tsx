@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { StripeBillingPortalButton } from "@/components/stripe-billing-portal-button";
 import { buttonVariants } from "@/components/ui/button";
 import { niveauLabel, planLabel, subStatusLabel, tagLabel } from "@/lib/labels";
+import { isStripeCustomerId } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
+import { subscriptionGrantsAppAccess } from "@/lib/subscription-entitlement";
 import { cn } from "@/lib/utils";
 
 export default async function SettingsPage() {
@@ -23,6 +26,8 @@ export default async function SettingsPage() {
 
   const sub = user.subscription;
   const sp = user.studentProfile;
+  const showBillingPortal =
+    Boolean(sub && subscriptionGrantsAppAccess(sub) && isStripeCustomerId(sub.stripeCustomerId));
 
   return (
     <div className="space-y-6">
@@ -106,10 +111,24 @@ export default async function SettingsPage() {
         ) : (
           <p className="mt-2 text-sm text-muted-foreground">Aucune donnée d’abonnement.</p>
         )}
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Link href="/onboarding/plan" className={cn(buttonVariants(), "rounded-full")}>
-            Voir les plans
-          </Link>
+        <div className="mt-4 flex flex-col gap-3">
+          <div className="flex flex-wrap gap-2">
+            <Link href="/onboarding/plan" className={cn(buttonVariants(), "rounded-full")}>
+              Voir les plans
+            </Link>
+            {showBillingPortal ? <StripeBillingPortalButton /> : null}
+          </div>
+          {showBillingPortal ? (
+            <p className="max-w-xl text-xs text-muted-foreground">
+              Le portail Stripe te permet de mettre à jour la carte, télécharger les factures ou résilier. Active d’abord
+              le portail client dans le Dashboard Stripe (mode test ou live) : Paramètres → Portail client.
+            </p>
+          ) : sub && subscriptionGrantsAppAccess(sub) ? (
+            <p className="max-w-xl text-xs text-muted-foreground">
+              Après ton premier paiement d’abonnement, le bouton « Gérer paiement… » apparaîtra ici pour ouvrir le
+              portail Stripe.
+            </p>
+          ) : null}
         </div>
       </section>
     </div>
