@@ -7,6 +7,7 @@ import { epreuveBlancheShortLabel } from "@/lib/blanc-kind";
 import { prisma } from "@/lib/prisma";
 import { subscriptionGrantsAppAccess } from "@/lib/subscription-entitlement";
 import { SignOutButton } from "@/components/sign-out-button";
+import { StudelioLogo } from "@/components/studelio-logo";
 import { StudentThemeMenuToggle } from "@/components/student-theme-menu-toggle";
 import { cn } from "@/lib/utils";
 
@@ -43,11 +44,9 @@ export default async function StudentAppLayout({ children }: { children: React.R
       <div className="studelio-grain pointer-events-none fixed inset-0 z-[1]" aria-hidden />
       <header className="sticky top-0 z-10 border-b border-[var(--studelio-border)] bg-[var(--studelio-bg)]/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3 sm:h-14 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:py-0">
-          <Link
-            href="/app/dashboard"
-            className="shrink-0 font-display text-lg font-semibold italic text-[var(--studelio-blue)]"
-          >
-            Studelio
+          <Link href="/app/dashboard" className="shrink-0 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--studelio-bg)]">
+            <span className="sr-only">Studelio — Tableau de bord</span>
+            <StudelioLogo size="sm" />
           </Link>
           <nav className="flex flex-1 flex-wrap items-center gap-1 text-sm sm:flex-nowrap sm:justify-center">
             <Link

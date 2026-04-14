@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { StudelioLogo } from "@/components/studelio-logo";
 import { getBuildInfo } from "@/lib/build-info";
 import { LoginForm } from "./login-form";
 
@@ -12,8 +13,9 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[var(--studelio-bg-soft)] px-4 py-12">
-      <div className="mb-8 text-center">
-        <h1 className="font-display text-3xl font-semibold italic text-[var(--studelio-text)]">Studelio</h1>
+      <div className="mb-8 flex flex-col items-center text-center">
+        <h1 className="sr-only">Studelio — Connexion</h1>
+        <StudelioLogo size="lg" className="mx-auto" priority />
       </div>
       <div className="w-full max-w-md">
         <Suspense fallback={<div className="h-64 animate-pulse rounded-xl bg-muted" />}>
