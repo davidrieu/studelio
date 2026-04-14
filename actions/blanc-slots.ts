@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { blancKindForNiveau } from "@/lib/blanc-kind";
+import { planIncludesBlancInSubscription, subscriptionGrantsAppAccess } from "@/lib/subscription-entitlement";
 import { prisma } from "@/lib/prisma";
 
 export type BlancSlotActionState = { ok: true; message: string } | { ok: false; message: string };
@@ -46,12 +47,57 @@ export async function enrollBlancSlot(slotId: string): Promise<BlancSlotActionSt
   }
 
   try {
-    await prisma.blancEnrollment.create({
-      data: { slotId: slot.id, userId: ctx.userId },
+    await prisma.$transaction(async (tx) => {
+      const sub = await tx.subscription.findUnique({
+        where: { userId: ctx.userId },
+        select: { plan: true, status: true },
+      });
+      if (!sub || !subscriptionGrantsAppAccess(sub)) {
+        throw new Error("NO_SUB");
+      }
+
+      if (planIncludesBlancInSubscription(sub.plan)) {
+        await tx.blancEnrollment.create({
+          data: { slotId: slot.id, userId: ctx.userId },
+        });
+        return;
+      }
+
+      const purchase = await tx.blancOneTimePurchase.findFirst({
+        where: { userId: ctx.userId, consumedAt: null },
+        orderBy: { createdAt: "asc" },
+      });
+      if (!purchase) {
+        throw new Error("NO_BLANC_CREDIT");
+      }
+
+      await tx.blancEnrollment.create({
+        data: {
+          slotId: slot.id,
+          userId: ctx.userId,
+          blancPurchaseId: purchase.id,
+          proCorrectionPurchased: purchase.includesProCorrection,
+        },
+      });
+      await tx.blancOneTimePurchase.update({
+        where: { id: purchase.id },
+        data: { consumedAt: new Date() },
+      });
     });
     revalidatePath("/app/bac-blanc");
     return { ok: true, message: "Inscription enregistrée." };
-  } catch {
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "";
+    if (msg === "NO_BLANC_CREDIT") {
+      return {
+        ok: false,
+        message:
+          "Avec ton offre actuelle, achète une place (15 ou 20 €) ou passe à Excellence pour inclure les examens blancs.",
+      };
+    }
+    if (msg === "NO_SUB") {
+      return { ok: false, message: "Abonnement actif requis." };
+    }
     return { ok: false, message: "Tu es déjà inscrit·e à ce créneau." };
   }
 }
@@ -67,7 +113,7 @@ export async function unenrollBlancSlot(slotId: string): Promise<BlancSlotAction
 
   const existing = await prisma.blancEnrollment.findFirst({
     where: { slotId, userId: ctx.userId },
-    select: { id: true, status: true },
+    select: { id: true, status: true, blancPurchaseId: true },
   });
   if (!existing) {
     return { ok: false, message: "Inscription introuvable." };
@@ -79,12 +125,24 @@ export async function unenrollBlancSlot(slotId: string): Promise<BlancSlotAction
     };
   }
 
-  const deleted = await prisma.blancEnrollment.deleteMany({
-    where: { id: existing.id, userId: ctx.userId, status: "PENDING" },
-  });
-  if (deleted.count === 0) {
+  try {
+    await prisma.$transaction(async (tx) => {
+      if (existing.blancPurchaseId) {
+        await tx.blancOneTimePurchase.update({
+          where: { id: existing.blancPurchaseId },
+          data: { consumedAt: null },
+        });
+      }
+      const deleted = await tx.blancEnrollment.deleteMany({
+        where: { id: existing.id, userId: ctx.userId, status: "PENDING" },
+      });
+      if (deleted.count === 0) {
+        throw new Error("NOT_FOUND");
+      }
+    });
+    revalidatePath("/app/bac-blanc");
+    return { ok: true, message: "Inscription annulée." };
+  } catch {
     return { ok: false, message: "Inscription introuvable." };
   }
-  revalidatePath("/app/bac-blanc");
-  return { ok: true, message: "Inscription annulée." };
 }

@@ -99,6 +99,7 @@ model User {
   correctedBacBlancs     BacBlanc[]          @relation("BacBlancCorrecteur")
   blancEnrollments       BlancEnrollment[]   @relation("BlancEnrollmentStudent")
   correctedBlancEnrollments BlancEnrollment[] @relation("BlancEnrollmentCorrecteur")
+  blancOneTimePurchases  BlancOneTimePurchase[]
   accounts               Account[]
 }
 
@@ -333,8 +334,30 @@ model BlancEnrollment {
   submittedAt  DateTime?
   correctedAt  DateTime?
   createdAt    DateTime        @default(now())
+  /// Inscription payée à l’unité (offres Essentiel / Progression).
+  blancPurchaseId String?       @unique
+  blancPurchase   BlancOneTimePurchase? @relation(fields: [blancPurchaseId], references: [id], onDelete: SetNull)
+  /// Acheté avec l’option « + correction enseignant » (20 €).
+  proCorrectionPurchased Boolean @default(false)
 
   @@unique([slotId, userId])
+}
+
+/// Achat ponctuel d’une place examen blanc / brevet blanc (hors offre Excellence).
+model BlancOneTimePurchase {
+  id                       String    @id @default(cuid())
+  userId                   String
+  user                     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  includesProCorrection    Boolean   @default(false)
+  stripeCheckoutSessionId  String    @unique
+  amountTotalCents         Int
+  /// Rempli quand une inscription a consommé ce crédit ; remis à null si l’élève annule une inscription encore « PENDING ».
+  consumedAt               DateTime?
+  createdAt                DateTime  @default(now())
+
+  enrollment BlancEnrollment?
+
+  @@index([userId, consumedAt])
 }
 
 model ApiConfig {

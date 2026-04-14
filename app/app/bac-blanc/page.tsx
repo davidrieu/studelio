@@ -3,9 +3,11 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { BlancCopieForm } from "@/components/blanc-copie-form";
 import { BlancEnrollButton, BlancUnenrollButton } from "@/components/blanc-slot-actions";
+import { BlancUpsellPanel } from "@/components/blanc-upsell-panel";
 import { buttonVariants } from "@/components/ui/button";
 import { blancKindForNiveau, blancKindLabel, epreuveBlancheShortLabel } from "@/lib/blanc-kind";
-import { bacBlancStatusLabel } from "@/lib/labels";
+import { bacBlancStatusLabel, planLabel } from "@/lib/labels";
+import { planIncludesBlancInSubscription } from "@/lib/subscription-entitlement";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
 
@@ -20,7 +22,17 @@ function formatVisioDateTime(d: Date) {
   });
 }
 
-export default async function EpreuvesBlanchesPage() {
+function firstParam(v: string | string[] | undefined): string | undefined {
+  if (typeof v === "string") return v;
+  if (Array.isArray(v)) return v[0];
+  return undefined;
+}
+
+export default async function EpreuvesBlanchesPage({
+  searchParams,
+}: {
+  searchParams?: Record<string, string | string[] | undefined>;
+}) {
   const session = await auth();
   if (!session?.user?.id) {
     redirect("/auth/login?session=required");
@@ -34,9 +46,25 @@ export default async function EpreuvesBlanchesPage() {
     redirect("/onboarding");
   }
 
+  const subscription = await prisma.subscription.findUnique({
+    where: { userId: session.user.id },
+    select: { plan: true, status: true },
+  });
+  const plan = subscription?.plan ?? "ESSENTIEL";
+  const blancIncludedInPlan = planIncludesBlancInSubscription(plan);
+
+  const creditsAvailable = await prisma.blancOneTimePurchase.count({
+    where: { userId: session.user.id, consumedAt: null },
+  });
+
+  const stripeConfigured = Boolean(process.env.STRIPE_SECRET_KEY);
+  const canEnrollNewSlot = blancIncludedInPlan || creditsAvailable > 0;
+
   const kind = blancKindForNiveau(profile.niveau);
   const pageTitle = epreuveBlancheShortLabel(profile.niveau);
   const now = new Date();
+
+  const blancPay = firstParam(searchParams?.blanc_pay);
 
   const myEnrollments = await prisma.blancEnrollment.findMany({
     where: { userId: session.user.id, slot: { kind } },
@@ -64,6 +92,21 @@ export default async function EpreuvesBlanchesPage() {
 
   return (
     <div className="space-y-8">
+      {blancPay === "ok" ? (
+        <p
+          className="rounded-[16px] border border-[var(--studelio-green-dim)] bg-[var(--studelio-green-dim)] px-4 py-3 text-sm text-[var(--studelio-text)]"
+          role="status"
+        >
+          Paiement reçu. Ta place pour un examen blanc est disponible — choisis un créneau ci-dessous (ou actualise si
+          le message tarde).
+        </p>
+      ) : null}
+      {blancPay === "cancel" ? (
+        <p className="rounded-xl border border-[var(--studelio-border)] bg-card px-4 py-3 text-sm text-[var(--studelio-text-body)]">
+          Paiement annulé. Tu peux réessayer quand tu veux.
+        </p>
+      ) : null}
+
       <header className="rounded-[20px] border border-[var(--studelio-border)] bg-gradient-to-br from-[var(--studelio-bg-soft)] to-card p-6 shadow-[var(--studelio-shadow)] sm:p-8">
         <h1 className="font-display text-2xl font-semibold text-[var(--studelio-text)]">{pageTitle}</h1>
         <p className="mt-2 max-w-2xl text-sm text-[var(--studelio-text-body)]">
@@ -82,11 +125,22 @@ export default async function EpreuvesBlanchesPage() {
         <p className="mt-2 text-xs text-muted-foreground">Public affiché : {blancKindLabel[kind]}</p>
       </header>
 
+      {!blancIncludedInPlan ? (
+        <BlancUpsellPanel
+          stripeConfigured={stripeConfigured}
+          planName={planLabel[plan]}
+          creditsAvailable={creditsAvailable}
+        />
+      ) : null}
+
       <section className="space-y-4">
         <h2 className="font-display text-lg font-semibold text-[var(--studelio-text)]">Mes inscriptions</h2>
         {myEnrollments.length === 0 ? (
           <p className="rounded-[20px] border border-dashed border-[var(--studelio-border)] bg-card/50 p-6 text-sm text-[var(--studelio-text-body)]">
-            Tu n’es inscrit·e à aucun créneau pour l’instant. Parcours la liste ci-dessous et clique sur « M’inscrire ».
+            Tu n’es inscrit·e à aucun créneau pour l’instant.
+            {canEnrollNewSlot ?
+              " Parcours la liste ci-dessous et clique sur « M’inscrire »."
+            : " Achète une place ou passe à l’offre Excellence pour t’inscrire."}
           </p>
         ) : (
           <ul className="grid gap-4 sm:grid-cols-2">
@@ -103,6 +157,11 @@ export default async function EpreuvesBlanchesPage() {
                       {bacBlancStatusLabel[row.status]}
                     </span>
                   </div>
+                  {row.proCorrectionPurchased ? (
+                    <p className="mt-2 text-xs font-medium text-[var(--studelio-blue)]">
+                      Option payée : correction par un enseignant
+                    </p>
+                  ) : null}
                   {s.description ? (
                     <p className="mt-2 text-sm text-[var(--studelio-text-body)]">{s.description}</p>
                   ) : null}
@@ -184,7 +243,12 @@ export default async function EpreuvesBlanchesPage() {
 
       <section className="space-y-4">
         <h2 className="font-display text-lg font-semibold text-[var(--studelio-text)]">Créneaux disponibles</h2>
-        {openToJoin.length === 0 ? (
+        {!canEnrollNewSlot ? (
+          <p className="rounded-[20px] border border-[var(--studelio-border)] bg-card/50 p-6 text-sm text-[var(--studelio-text-body)]">
+            Avec ton offre <span className="font-medium">{planLabel[plan]}</span>, les inscriptions aux examens blancs
+            passent par un achat à l’unité (15 ou 20&nbsp;€) ou par l’offre Excellence — vois le bloc ci-dessus.
+          </p>
+        ) : openToJoin.length === 0 ? (
           <p className="rounded-[20px] border border-[var(--studelio-border)] bg-card/50 p-6 text-sm text-[var(--studelio-text-body)]">
             Aucun autre créneau ouvert pour le moment. Reviens plus tard ou contacte l’équipe Studelio.
           </p>

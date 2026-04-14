@@ -28,7 +28,7 @@ async function seedDemoUser() {
       subscription: {
         create: {
           stripeCustomerId: "pending_demo_local",
-          status: "INCOMPLETE",
+          status: "TRIALING",
           plan: "ESSENTIEL",
         },
       },
@@ -37,6 +37,7 @@ async function seedDemoUser() {
           niveau: "SIXIEME",
           interests: [],
           tags: [],
+          onboardingCompletedAt: new Date(),
           ...(programme?.id ? { programmeId: programme.id } : {}),
         },
       },

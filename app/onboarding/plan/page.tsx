@@ -3,6 +3,12 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { PlanPicker } from "./plan-picker";
 
+function firstParam(v: string | string[] | undefined): string | undefined {
+  if (typeof v === "string") return v;
+  if (Array.isArray(v)) return v[0];
+  return undefined;
+}
+
 export default async function OnboardingPlanPage({
   searchParams,
 }: {
@@ -38,9 +44,19 @@ export default async function OnboardingPlanPage({
 
   const checkout = searchParams.checkout;
   const canceledCheckout = checkout === "canceled";
+  const subRequired = firstParam(searchParams.sub) === "required";
 
   return (
     <div className="mx-auto flex min-h-screen max-w-6xl flex-col justify-center gap-8 px-4 py-12">
+      {subRequired ? (
+        <p
+          className="rounded-xl border border-[var(--studelio-blue)]/30 bg-[var(--studelio-blue-dim)]/40 px-4 py-3 text-sm text-[var(--studelio-text-body)]"
+          role="status"
+        >
+          Pour accéder à Studelio (tableau de bord, André, programme…), choisis une offre et finalise ton abonnement
+          (ou ton essai gratuit de 3 jours).
+        </p>
+      ) : null}
       <div>
         <h1 className="font-display text-3xl font-semibold text-[var(--studelio-text)]">
           Choisis l’offre qui colle à ton objectif

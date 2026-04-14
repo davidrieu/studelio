@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { epreuveBlancheShortLabel } from "@/lib/blanc-kind";
 import { prisma } from "@/lib/prisma";
+import { subscriptionGrantsAppAccess } from "@/lib/subscription-entitlement";
 import { SignOutButton } from "@/components/sign-out-button";
 
 export default async function StudentAppLayout({ children }: { children: React.ReactNode }) {
@@ -15,6 +16,13 @@ export default async function StudentAppLayout({ children }: { children: React.R
     });
     if (!profile?.onboardingCompletedAt) {
       redirect("/onboarding");
+    }
+    const sub = await prisma.subscription.findUnique({
+      where: { userId: session.user.id },
+      select: { status: true },
+    });
+    if (!subscriptionGrantsAppAccess(sub)) {
+      redirect("/onboarding/plan?sub=required");
     }
     if (profile?.niveau) {
       epreuveNavLabel = epreuveBlancheShortLabel(profile.niveau);

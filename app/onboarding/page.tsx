@@ -21,7 +21,7 @@ export default async function OnboardingPage() {
     redirect("/auth/register");
   }
   if (profile.onboardingCompletedAt) {
-    redirect("/app/dashboard");
+    redirect("/onboarding/plan");
   }
 
   return (

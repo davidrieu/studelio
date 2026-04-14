@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
@@ -50,6 +51,29 @@ export async function POST(req: Request) {
     switch (event.type) {
       case "checkout.session.completed": {
         const s = event.data.object as Stripe.Checkout.Session;
+        if (s.mode === "payment" && s.metadata?.studelioKind === "blanc_addon") {
+          const userId = s.metadata?.userId;
+          const tier = s.metadata?.tier;
+          if (!userId || (tier !== "slot" && tier !== "slot_pro")) break;
+          const sessionId = s.id;
+          const amount = typeof s.amount_total === "number" ? s.amount_total : 0;
+          try {
+            await prisma.blancOneTimePurchase.create({
+              data: {
+                userId,
+                stripeCheckoutSessionId: sessionId,
+                amountTotalCents: amount,
+                includesProCorrection: tier === "slot_pro",
+              },
+            });
+          } catch (e) {
+            if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+              break;
+            }
+            throw e;
+          }
+          break;
+        }
         if (s.mode !== "subscription") break;
         const userId = s.metadata?.userId;
         const subId = typeof s.subscription === "string" ? s.subscription : s.subscription?.id;
