@@ -183,7 +183,7 @@ export function StudentDashboardView(props: {
       <section>
         <h2 className="font-display text-lg font-semibold tracking-tight text-[var(--studelio-text)]">Accès rapide</h2>
         <p className="mt-1 text-sm text-muted-foreground">Les essentiels pour avancer aujourd’hui.</p>
-        <ul className="mt-5 flex flex-col gap-4">
+        <ul className="mt-5 grid grid-cols-2 gap-3 sm:gap-4">
           {quickLinks.map((item) => (
             <li key={item.href}>
               <Link
