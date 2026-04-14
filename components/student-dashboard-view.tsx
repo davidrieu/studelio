@@ -1,16 +1,9 @@
 import Link from "next/link";
-import {
-  BookOpen,
-  CalendarDays,
-  Mic,
-  Sparkles,
-  Timer,
-  UserRound,
-  CreditCard,
-} from "lucide-react";
+import { Timer, UserRound, CreditCard } from "lucide-react";
 import type { SubStatus } from "@prisma/client";
 import { AddParentTutorForm } from "@/components/add-parent-tutor-form";
 import { StudentDashboardCharts } from "@/components/student-dashboard-charts";
+import { StudentDashboardQuickLinks } from "@/components/student-dashboard-quick-links";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -68,37 +61,6 @@ export function StudentDashboardView(props: {
   const hour = new Date().getHours();
   const greet = greetingForHour(hour);
   const totalFmt = formatMinutes(props.totalMinutes);
-
-  const quickLinks = [
-    {
-      href: "/app/andre",
-      title: "André",
-      description: "Pose tes questions, prépare un exposé ou une rédaction.",
-      icon: Sparkles,
-      accent: "from-violet-500/10 to-[var(--studelio-blue)]/5",
-    },
-    {
-      href: "/app/programme/seance",
-      title: "Ma séance",
-      description: "Enchaîne les exercices de ton programme personnalisé.",
-      icon: BookOpen,
-      accent: "from-[var(--studelio-blue)]/12 to-transparent",
-    },
-    {
-      href: "/app/dictee",
-      title: "Dictée",
-      description: "Entraîne-toi avec les dictées audio du programme.",
-      icon: Mic,
-      accent: "from-teal-500/10 to-transparent",
-    },
-    {
-      href: "/app/bac-blanc",
-      title: props.epreuveShortLabel,
-      description: "Inscriptions, créneaux et suivi de tes épreuves blanches.",
-      icon: CalendarDays,
-      accent: "from-rose-500/10 to-transparent",
-    },
-  ] as const;
 
   return (
     <div className="space-y-10 pb-4">
@@ -180,41 +142,8 @@ export function StudentDashboardView(props: {
         </p>
       </section>
 
-      <section>
-        <h2 className="font-display text-lg font-semibold tracking-tight text-[var(--studelio-text)]">Accès rapide</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Les essentiels pour avancer aujourd’hui.</p>
-        <ul className="mt-5 grid grid-cols-2 gap-3 sm:gap-4">
-          {quickLinks.map((item) => (
-            <li key={item.href}>
-              <Link
-                href={item.href}
-                className={cn(
-                  "group flex flex-col gap-3 rounded-2xl border border-[var(--studelio-border)] bg-card p-5",
-                  "shadow-[var(--studelio-shadow)] transition-all duration-200",
-                  "hover:-translate-y-0.5 hover:border-[var(--studelio-blue)]/25 hover:shadow-lg",
-                )}
-              >
-                <div
-                  className={cn(
-                    "flex w-full items-start justify-between gap-3 rounded-xl bg-gradient-to-br p-0.5",
-                    item.accent,
-                  )}
-                >
-                  <span className="inline-flex rounded-xl bg-[var(--studelio-blue-dim)] p-2.5 text-[var(--studelio-blue)] ring-1 ring-[var(--studelio-border)]/60 transition group-hover:ring-[var(--studelio-blue)]/20">
-                    <item.icon className="h-5 w-5" aria-hidden />
-                  </span>
-                  <span className="rounded-full bg-muted/80 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground opacity-0 transition group-hover:opacity-100">
-                    Ouvrir
-                  </span>
-                </div>
-                <div>
-                  <span className="font-display text-base font-semibold text-[var(--studelio-text)]">{item.title}</span>
-                  <p className="mt-1 text-sm leading-snug text-muted-foreground">{item.description}</p>
-                </div>
-              </Link>
-            </li>
-          ))}
-        </ul>
+      <section aria-labelledby="quick-links-heading">
+        <StudentDashboardQuickLinks epreuveShortLabel={props.epreuveShortLabel} />
       </section>
 
       <section className="rounded-[24px] border border-[var(--studelio-border)] bg-card p-6 shadow-[var(--studelio-shadow)] sm:p-8">
