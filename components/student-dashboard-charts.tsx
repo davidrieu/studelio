@@ -21,8 +21,8 @@ const MINUTES_CAP = 720;
 const CHAT_CAP = 40;
 const BLANC_CAP = 8;
 
-/** Hauteur du tracé ; marge basse gérée par RadarChart.margin + padding sous le bloc. */
-const CHART_H = 156;
+/** Hauteur du tracé (px) ; marges Recharts + padding carte pour les libellés. */
+const CHART_H = 212;
 
 const springEase = [0.22, 1, 0.36, 1] as const;
 
@@ -105,9 +105,9 @@ export function StudentDashboardCharts(props: {
   const radarData = radarFromRows(rows);
 
   return (
-    <div className="grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 min-[480px]:gap-4">
+    <div className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 min-[480px]:gap-5">
       <motion.div
-        className="relative overflow-hidden rounded-2xl border border-[var(--studelio-border)] bg-gradient-to-b from-card to-[var(--studelio-bg-soft)]/40 p-3 pb-4 shadow-[var(--studelio-shadow)]"
+        className="relative overflow-hidden rounded-2xl border border-[var(--studelio-border)] bg-gradient-to-b from-card to-[var(--studelio-bg-soft)]/40 p-4 pb-5 shadow-[var(--studelio-shadow)] sm:p-5 sm:pb-6"
         initial={{ opacity: 0, y: 14, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.55, ease: springEase }}
@@ -116,19 +116,19 @@ export function StudentDashboardCharts(props: {
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_30%_0%,rgba(99,102,241,0.12),transparent_55%)]"
           aria-hidden
         />
-        <h3 className="relative font-display text-xs font-semibold uppercase tracking-wide text-[var(--studelio-text)]">
+        <h3 className="relative font-display text-sm font-semibold uppercase tracking-wide text-[var(--studelio-text)]">
           Profil d’engagement
         </h3>
-        <p className="relative mt-0.5 text-[10px] leading-tight text-muted-foreground">
+        <p className="relative mt-1 text-[11px] leading-snug text-muted-foreground sm:text-xs">
           Échelle relative (série 14 j., temps 12 h…).
         </p>
-        <div className="relative mt-1 min-h-0 pb-1" style={{ height: CHART_H }}>
+        <div className="relative mt-2 min-h-0 pb-1" style={{ height: CHART_H }}>
           <ResponsiveContainer width="100%" height="100%">
             <RadarChart
               cx="50%"
               cy="48%"
-              outerRadius="72%"
-              margin={{ top: 6, right: 10, bottom: 22, left: 10 }}
+              outerRadius="76%"
+              margin={{ top: 8, right: 12, bottom: 26, left: 12 }}
               data={radarData}
             >
               <defs>
@@ -143,15 +143,15 @@ export function StudentDashboardCharts(props: {
                 </linearGradient>
               </defs>
               <PolarGrid stroke="var(--studelio-border)" strokeDasharray="3 5" strokeOpacity={0.85} />
-              <PolarAngleAxis dataKey="subject" tick={{ fill: "var(--studelio-text-muted)", fontSize: 9 }} tickLine={false} />
+              <PolarAngleAxis dataKey="subject" tick={{ fill: "var(--studelio-text-muted)", fontSize: 10 }} tickLine={false} />
               <Radar
                 name="Engagement"
                 dataKey="full"
                 stroke="url(#studelioRadarStroke)"
                 fill="url(#studelioRadarFill)"
                 fillOpacity={1}
-                strokeWidth={2}
-                dot={{ r: 3, strokeWidth: 1.5, fill: "#fff", stroke: "#2451b0" }}
+                strokeWidth={2.25}
+                dot={{ r: 4, strokeWidth: 1.5, fill: "#fff", stroke: "#2451b0" }}
                 isAnimationActive
                 animationDuration={1100}
                 animationEasing="ease-out"
@@ -162,7 +162,7 @@ export function StudentDashboardCharts(props: {
       </motion.div>
 
       <motion.div
-        className="relative overflow-hidden rounded-2xl border border-[var(--studelio-border)] bg-gradient-to-b from-card to-[var(--studelio-bg-soft)]/40 p-3 pb-4 shadow-[var(--studelio-shadow)]"
+        className="relative overflow-hidden rounded-2xl border border-[var(--studelio-border)] bg-gradient-to-b from-card to-[var(--studelio-bg-soft)]/40 p-4 pb-5 shadow-[var(--studelio-shadow)] sm:p-5 sm:pb-6"
         initial={{ opacity: 0, y: 14, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.55, delay: 0.08, ease: springEase }}
@@ -171,19 +171,19 @@ export function StudentDashboardCharts(props: {
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_80%_0%,rgba(36,81,176,0.1),transparent_50%)]"
           aria-hidden
         />
-        <h3 className="relative font-display text-xs font-semibold uppercase tracking-wide text-[var(--studelio-text)]">
+        <h3 className="relative font-display text-sm font-semibold uppercase tracking-wide text-[var(--studelio-text)]">
           Volume par indicateur
         </h3>
-        <p className="relative mt-0.5 text-[10px] leading-tight text-muted-foreground">
+        <p className="relative mt-1 text-[11px] leading-snug text-muted-foreground sm:text-xs">
           Survol pour le détail · repères visuels.
         </p>
-        <div className="relative mt-1 min-h-0 pb-1" style={{ height: CHART_H }}>
+        <div className="relative mt-2 min-h-0 pb-1" style={{ height: CHART_H }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               layout="vertical"
               data={rows}
-              margin={{ top: 2, right: 6, left: 2, bottom: 10 }}
-              barCategoryGap={10}
+              margin={{ top: 4, right: 8, left: 4, bottom: 14 }}
+              barCategoryGap={14}
             >
               <defs>
                 {rows.map((r) => (
@@ -199,8 +199,8 @@ export function StudentDashboardCharts(props: {
               <YAxis
                 type="category"
                 dataKey="label"
-                width={102}
-                tick={{ fontSize: 9, fill: "var(--studelio-text-body)" }}
+                width={118}
+                tick={{ fontSize: 10, fill: "var(--studelio-text-body)" }}
                 axisLine={false}
                 tickLine={false}
               />
@@ -225,8 +225,8 @@ export function StudentDashboardCharts(props: {
               />
               <Bar
                 dataKey="pct"
-                radius={[0, 8, 8, 0]}
-                barSize={15}
+                radius={[0, 10, 10, 0]}
+                barSize={19}
                 isAnimationActive
                 animationDuration={1000}
                 animationEasing="ease-out"
