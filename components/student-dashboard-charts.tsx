@@ -21,7 +21,8 @@ const MINUTES_CAP = 720;
 const CHAT_CAP = 40;
 const BLANC_CAP = 8;
 
-const CHART_H = 148;
+/** Hauteur du tracé ; marge basse gérée par RadarChart.margin + padding sous le bloc. */
+const CHART_H = 156;
 
 const springEase = [0.22, 1, 0.36, 1] as const;
 
@@ -106,7 +107,7 @@ export function StudentDashboardCharts(props: {
   return (
     <div className="grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 min-[480px]:gap-4">
       <motion.div
-        className="relative overflow-hidden rounded-2xl border border-[var(--studelio-border)] bg-gradient-to-b from-card to-[var(--studelio-bg-soft)]/40 p-3 shadow-[var(--studelio-shadow)]"
+        className="relative overflow-hidden rounded-2xl border border-[var(--studelio-border)] bg-gradient-to-b from-card to-[var(--studelio-bg-soft)]/40 p-3 pb-4 shadow-[var(--studelio-shadow)]"
         initial={{ opacity: 0, y: 14, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.55, ease: springEase }}
@@ -121,9 +122,15 @@ export function StudentDashboardCharts(props: {
         <p className="relative mt-0.5 text-[10px] leading-tight text-muted-foreground">
           Échelle relative (série 14 j., temps 12 h…).
         </p>
-        <div className="relative mt-1" style={{ height: CHART_H }}>
+        <div className="relative mt-1 min-h-0 pb-1" style={{ height: CHART_H }}>
           <ResponsiveContainer width="100%" height="100%">
-            <RadarChart cx="50%" cy="54%" outerRadius="82%" data={radarData}>
+            <RadarChart
+              cx="50%"
+              cy="48%"
+              outerRadius="72%"
+              margin={{ top: 6, right: 10, bottom: 22, left: 10 }}
+              data={radarData}
+            >
               <defs>
                 <linearGradient id="studelioRadarFill" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#6366f1" stopOpacity={0.55} />
@@ -136,7 +143,7 @@ export function StudentDashboardCharts(props: {
                 </linearGradient>
               </defs>
               <PolarGrid stroke="var(--studelio-border)" strokeDasharray="3 5" strokeOpacity={0.85} />
-              <PolarAngleAxis dataKey="subject" tick={{ fill: "var(--studelio-text-muted)", fontSize: 9 }} />
+              <PolarAngleAxis dataKey="subject" tick={{ fill: "var(--studelio-text-muted)", fontSize: 9 }} tickLine={false} />
               <Radar
                 name="Engagement"
                 dataKey="full"
@@ -155,7 +162,7 @@ export function StudentDashboardCharts(props: {
       </motion.div>
 
       <motion.div
-        className="relative overflow-hidden rounded-2xl border border-[var(--studelio-border)] bg-gradient-to-b from-card to-[var(--studelio-bg-soft)]/40 p-3 shadow-[var(--studelio-shadow)]"
+        className="relative overflow-hidden rounded-2xl border border-[var(--studelio-border)] bg-gradient-to-b from-card to-[var(--studelio-bg-soft)]/40 p-3 pb-4 shadow-[var(--studelio-shadow)]"
         initial={{ opacity: 0, y: 14, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.55, delay: 0.08, ease: springEase }}
@@ -170,12 +177,12 @@ export function StudentDashboardCharts(props: {
         <p className="relative mt-0.5 text-[10px] leading-tight text-muted-foreground">
           Survol pour le détail · repères visuels.
         </p>
-        <div className="relative mt-1" style={{ height: CHART_H }}>
+        <div className="relative mt-1 min-h-0 pb-1" style={{ height: CHART_H }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               layout="vertical"
               data={rows}
-              margin={{ top: 2, right: 6, left: 2, bottom: 2 }}
+              margin={{ top: 2, right: 6, left: 2, bottom: 10 }}
               barCategoryGap={10}
             >
               <defs>
