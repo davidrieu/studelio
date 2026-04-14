@@ -52,52 +52,56 @@ export async function POST(req: Request) {
     switch (event.type) {
       case "checkout.session.completed": {
         const s = event.data.object as Stripe.Checkout.Session;
-        if (s.mode === "payment" && s.metadata?.studelioKind === "blanc_addon") {
-          const userId = s.metadata?.userId;
-          const tier = s.metadata?.tier;
-          if (userId && (tier === "slot" || tier === "slot_pro")) {
-            const sessionId = s.id;
-            const amount = typeof s.amount_total === "number" ? s.amount_total : 0;
-            try {
-              await prisma.blancOneTimePurchase.create({
-                data: {
-                  userId,
-                  stripeCheckoutSessionId: sessionId,
-                  amountTotalCents: amount,
-                  includesProCorrection: tier === "slot_pro",
-                },
-              });
-            } catch (e) {
-              if (!(e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002")) {
-                throw e;
+        try {
+          if (s.mode === "payment" && s.metadata?.studelioKind === "blanc_addon") {
+            const userId = s.metadata?.userId;
+            const tier = s.metadata?.tier;
+            if (userId && (tier === "slot" || tier === "slot_pro")) {
+              const sessionId = s.id;
+              const amount = typeof s.amount_total === "number" ? s.amount_total : 0;
+              try {
+                await prisma.blancOneTimePurchase.create({
+                  data: {
+                    userId,
+                    stripeCheckoutSessionId: sessionId,
+                    amountTotalCents: amount,
+                    includesProCorrection: tier === "slot_pro",
+                  },
+                });
+              } catch (e) {
+                if (!(e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002")) {
+                  throw e;
+                }
+              }
+            }
+          } else if (s.mode === "subscription") {
+            const userId = s.metadata?.userId;
+            const subId = typeof s.subscription === "string" ? s.subscription : s.subscription?.id;
+            const customerId = typeof s.customer === "string" ? s.customer : s.customer?.id;
+            if (userId && subId && customerId) {
+              const sub = await stripe.subscriptions.retrieve(subId);
+              const priceId = priceIdFromSubscription(sub);
+              if (priceId) {
+                const plan = planFromStripePriceId(priceId);
+                const status = stripeSubscriptionToSubStatus(sub.status);
+                const periodEnd = periodEndFromSubscription(sub);
+
+                await prisma.subscription.update({
+                  where: { userId },
+                  data: {
+                    stripeCustomerId: customerId,
+                    stripeSubscriptionId: sub.id,
+                    stripePriceId: priceId,
+                    plan,
+                    status,
+                    ...(periodEnd ? { currentPeriodEnd: periodEnd } : {}),
+                  },
+                });
               }
             }
           }
-        } else if (s.mode === "subscription") {
-          const userId = s.metadata?.userId;
-          const subId = typeof s.subscription === "string" ? s.subscription : s.subscription?.id;
-          const customerId = typeof s.customer === "string" ? s.customer : s.customer?.id;
-          if (userId && subId && customerId) {
-            const sub = await stripe.subscriptions.retrieve(subId);
-            const priceId = priceIdFromSubscription(sub);
-            if (priceId) {
-              const plan = planFromStripePriceId(priceId);
-              const status = stripeSubscriptionToSubStatus(sub.status);
-              const periodEnd = periodEndFromSubscription(sub);
-
-              await prisma.subscription.update({
-                where: { userId },
-                data: {
-                  stripeCustomerId: customerId,
-                  stripeSubscriptionId: sub.id,
-                  stripePriceId: priceId,
-                  plan,
-                  status,
-                  ...(periodEnd ? { currentPeriodEnd: periodEnd } : {}),
-                },
-              });
-            }
-          }
+        } catch (e) {
+          console.error("[stripe webhook] checkout.session.completed (métier abonnement / blanc)", e);
         }
         await recordStudelioOrderFromCheckout(stripe, s.id);
         break;

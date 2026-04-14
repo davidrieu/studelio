@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { AdminSyncStripeOrdersButton } from "@/components/admin/admin-sync-stripe-orders-button";
 import { buttonVariants } from "@/components/ui/button";
 import { orderKindLabel, orderStatusLabel } from "@/lib/labels";
 import { prisma } from "@/lib/prisma";
@@ -64,9 +65,14 @@ export default async function AdminCommandesPage({
       <header>
         <h1 className="font-display text-2xl font-semibold text-[var(--studelio-text)]">Commandes</h1>
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          Historique issu de Stripe Checkout : abonnements et achats examen blanc à l’unité. Les statuts sont mis à jour
-          par les webhooks (paiement réussi, session expirée).
+          Historique issu de Stripe Checkout : abonnements et achats examen blanc à l’unité. Les lignes sont créées quand
+          Stripe envoie <code className="rounded bg-muted px-1">checkout.session.completed</code> au webhook, ou quand
+          tu lances l’import ci-dessous. Le mode test ou live suit la clé{" "}
+          <code className="rounded bg-muted px-1">STRIPE_SECRET_KEY</code> sur Vercel.
         </p>
+        <div className="mt-4">
+          <AdminSyncStripeOrdersButton />
+        </div>
       </header>
 
       <div className="flex flex-wrap gap-2">
@@ -91,10 +97,22 @@ export default async function AdminCommandesPage({
       </div>
 
       {orders.length === 0 ? (
-        <p className="rounded-[20px] border border-dashed border-[var(--studelio-border)] bg-card/50 p-8 text-sm text-muted-foreground">
-          Aucune commande en base pour l’instant. Après un paiement test ou réel, vérifie que le webhook Stripe appelle
-          bien <code className="rounded bg-muted px-1">/api/stripe/webhook</code>.
-        </p>
+        <div className="space-y-4 rounded-[20px] border border-dashed border-[var(--studelio-border)] bg-card/50 p-8 text-sm text-muted-foreground">
+          <p>Aucune commande en base pour l’instant.</p>
+          <ul className="list-inside list-disc space-y-1">
+            <li>
+              Clique sur <strong className="text-foreground">Importer les commandes depuis Stripe</strong> ci-dessus
+              pour récupérer les checkouts Studelio déjà complétés (90 derniers jours).
+            </li>
+            <li>
+              Vérifie dans Stripe (Developers → Webhooks) que l’URL pointe vers{" "}
+              <code className="rounded bg-muted px-1">…/api/stripe/webhook</code> et que l’événement{" "}
+              <code className="rounded bg-muted px-1">checkout.session.completed</code> est coché — avec le secret du{" "}
+              <strong className="text-foreground">même mode</strong> (test ou prod) que{" "}
+              <code className="rounded bg-muted px-1">STRIPE_SECRET_KEY</code>.
+            </li>
+          </ul>
+        </div>
       ) : (
         <div className="overflow-x-auto rounded-[20px] border border-[var(--studelio-border)] bg-card shadow-[var(--studelio-shadow)]">
           <table className="w-full min-w-[720px] border-collapse text-sm">
