@@ -2,6 +2,8 @@ import type {
   BacBlancStatus,
   ChapterProgressStatus,
   Niveau,
+  OrderKind,
+  OrderStatus,
   Plan,
   Role,
   SubStatus,
@@ -60,6 +62,18 @@ export const subStatusLabel: Record<SubStatus, string> = {
   PAST_DUE: "Paiement en retard",
   CANCELED: "Résilié",
   INCOMPLETE: "À finaliser",
+};
+
+export const orderKindLabel: Record<OrderKind, string> = {
+  SUBSCRIPTION: "Abonnement",
+  BLANC_ADDON: "Examen blanc (à l’unité)",
+};
+
+export const orderStatusLabel: Record<OrderStatus, string> = {
+  PENDING: "En attente de paiement",
+  COMPLETED: "Payée",
+  CANCELED: "Annulée / expirée",
+  REFUNDED: "Remboursée",
 };
 
 /** Centres d’intérêt proposés (stockés comme libellés dans interests[]) */

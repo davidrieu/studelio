@@ -80,6 +80,18 @@ enum ChapterProgressStatus {
   COMPLETED
 }
 
+enum OrderKind {
+  SUBSCRIPTION
+  BLANC_ADDON
+}
+
+enum OrderStatus {
+  PENDING
+  COMPLETED
+  CANCELED
+  REFUNDED
+}
+
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
@@ -100,6 +112,7 @@ model User {
   blancEnrollments       BlancEnrollment[]   @relation("BlancEnrollmentStudent")
   correctedBlancEnrollments BlancEnrollment[] @relation("BlancEnrollmentCorrecteur")
   blancOneTimePurchases  BlancOneTimePurchase[]
+  orders                 Order[]
   accounts               Account[]
 }
 
@@ -171,6 +184,38 @@ model Subscription {
   cancelAtPeriodEnd    Boolean   @default(false)
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
+}
+
+/// Commande enregistrée depuis Stripe Checkout (abonnement ou bac blanc à l’unité).
+model Order {
+  id                        String      @id @default(cuid())
+  stripeCheckoutSessionId   String      @unique
+  userId                    String
+  user                      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind                      OrderKind
+  status                    OrderStatus @default(PENDING)
+  currency                  String      @default("eur")
+  totalAmountCents          Int
+  stripePaymentIntentId     String?
+  stripeSubscriptionId      String?
+  customerEmail             String?
+  createdAt                 DateTime    @default(now())
+  updatedAt                 DateTime    @updatedAt
+
+  lines OrderLine[]
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+}
+
+model OrderLine {
+  id               String @id @default(cuid())
+  orderId          String
+  order            Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  label            String
+  quantity         Int    @default(1)
+  unitAmountCents  Int
+  stripePriceId    String?
 }
 
 model ChatSession {

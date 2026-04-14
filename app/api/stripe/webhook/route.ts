@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
+import { markOrderCanceledIfPending, recordStudelioOrderFromCheckout } from "@/lib/stripe-record-order";
 import { getStripe, planFromStripePriceId } from "@/lib/stripe";
 import { stripeSubscriptionToSubStatus } from "@/lib/stripe-subscription";
 
@@ -54,51 +55,56 @@ export async function POST(req: Request) {
         if (s.mode === "payment" && s.metadata?.studelioKind === "blanc_addon") {
           const userId = s.metadata?.userId;
           const tier = s.metadata?.tier;
-          if (!userId || (tier !== "slot" && tier !== "slot_pro")) break;
-          const sessionId = s.id;
-          const amount = typeof s.amount_total === "number" ? s.amount_total : 0;
-          try {
-            await prisma.blancOneTimePurchase.create({
-              data: {
-                userId,
-                stripeCheckoutSessionId: sessionId,
-                amountTotalCents: amount,
-                includesProCorrection: tier === "slot_pro",
-              },
-            });
-          } catch (e) {
-            if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
-              break;
+          if (userId && (tier === "slot" || tier === "slot_pro")) {
+            const sessionId = s.id;
+            const amount = typeof s.amount_total === "number" ? s.amount_total : 0;
+            try {
+              await prisma.blancOneTimePurchase.create({
+                data: {
+                  userId,
+                  stripeCheckoutSessionId: sessionId,
+                  amountTotalCents: amount,
+                  includesProCorrection: tier === "slot_pro",
+                },
+              });
+            } catch (e) {
+              if (!(e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002")) {
+                throw e;
+              }
             }
-            throw e;
           }
-          break;
+        } else if (s.mode === "subscription") {
+          const userId = s.metadata?.userId;
+          const subId = typeof s.subscription === "string" ? s.subscription : s.subscription?.id;
+          const customerId = typeof s.customer === "string" ? s.customer : s.customer?.id;
+          if (userId && subId && customerId) {
+            const sub = await stripe.subscriptions.retrieve(subId);
+            const priceId = priceIdFromSubscription(sub);
+            if (priceId) {
+              const plan = planFromStripePriceId(priceId);
+              const status = stripeSubscriptionToSubStatus(sub.status);
+              const periodEnd = periodEndFromSubscription(sub);
+
+              await prisma.subscription.update({
+                where: { userId },
+                data: {
+                  stripeCustomerId: customerId,
+                  stripeSubscriptionId: sub.id,
+                  stripePriceId: priceId,
+                  plan,
+                  status,
+                  ...(periodEnd ? { currentPeriodEnd: periodEnd } : {}),
+                },
+              });
+            }
+          }
         }
-        if (s.mode !== "subscription") break;
-        const userId = s.metadata?.userId;
-        const subId = typeof s.subscription === "string" ? s.subscription : s.subscription?.id;
-        const customerId = typeof s.customer === "string" ? s.customer : s.customer?.id;
-        if (!userId || !subId || !customerId) break;
-
-        const sub = await stripe.subscriptions.retrieve(subId);
-        const priceId = priceIdFromSubscription(sub);
-        if (!priceId) break;
-
-        const plan = planFromStripePriceId(priceId);
-        const status = stripeSubscriptionToSubStatus(sub.status);
-        const periodEnd = periodEndFromSubscription(sub);
-
-        await prisma.subscription.update({
-          where: { userId },
-          data: {
-            stripeCustomerId: customerId,
-            stripeSubscriptionId: sub.id,
-            stripePriceId: priceId,
-            plan,
-            status,
-            ...(periodEnd ? { currentPeriodEnd: periodEnd } : {}),
-          },
-        });
+        await recordStudelioOrderFromCheckout(stripe, s.id);
+        break;
+      }
+      case "checkout.session.expired": {
+        const s = event.data.object as Stripe.Checkout.Session;
+        await markOrderCanceledIfPending(s.id);
         break;
       }
       case "customer.subscription.updated":
@@ -133,6 +139,21 @@ export async function POST(req: Request) {
                 ? row.currentPeriodEnd
                 : nextPeriodEnd ?? row.currentPeriodEnd,
           },
+        });
+        break;
+      }
+      case "charge.refunded": {
+        const charge = event.data.object as Stripe.Charge;
+        const pi = charge.payment_intent;
+        const piId =
+          typeof pi === "string" ? pi : pi && typeof pi === "object" && "id" in pi ? String(pi.id) : null;
+        if (!piId) break;
+        await prisma.order.updateMany({
+          where: {
+            stripePaymentIntentId: piId,
+            status: { in: ["COMPLETED", "PENDING"] },
+          },
+          data: { status: "REFUNDED" },
         });
         break;
       }
