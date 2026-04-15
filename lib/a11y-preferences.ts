@@ -1,5 +1,8 @@
 export const A11Y_PREFERENCES_COOKIE = "studelio-a11y";
 
+/** Conteneur du contenu de l’app : les filtres CVD s’appliquent ici pour ne pas casser le `position: fixed` de la barre d’accessibilité. */
+export const A11Y_VISUAL_ROOT_ID = "studelio-a11y-visual-root";
+
 export type A11yFontStep = 0 | 1 | 2 | 3;
 
 /** Simulation / aide à la distinction des couleurs (rouge–vert, bleu–jaune, ou nuances retirées). */

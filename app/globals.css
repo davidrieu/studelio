@@ -184,17 +184,18 @@ html[data-a11y-reduce-motion="true"] *::after {
   }
 }
 
-/* Vision des couleurs (filtres sur body — SVG dans A11yColorVisionFilters) */
-html[data-a11y-cvd="protanopia"] body {
+/* Vision des couleurs — filtre sur le contenu uniquement (#studelio-a11y-visual-root), pas sur body,
+   sinon les descendants en position:fixed (barre d’accessibilité) sont pris dans le filtre et disparaissent mal. */
+html[data-a11y-cvd="protanopia"] #studelio-a11y-visual-root {
   filter: url(#studelio-a11y-cvd-prot) contrast(1.05);
 }
-html[data-a11y-cvd="deuteranopia"] body {
+html[data-a11y-cvd="deuteranopia"] #studelio-a11y-visual-root {
   filter: url(#studelio-a11y-cvd-deut) contrast(1.05);
 }
-html[data-a11y-cvd="tritanopia"] body {
+html[data-a11y-cvd="tritanopia"] #studelio-a11y-visual-root {
   filter: url(#studelio-a11y-cvd-trit) contrast(1.05);
 }
-html[data-a11y-cvd="monochrome"] body {
+html[data-a11y-cvd="monochrome"] #studelio-a11y-visual-root {
   filter: grayscale(1) contrast(1.08);
 }
 
