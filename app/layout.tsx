@@ -4,11 +4,8 @@ import { DM_Mono, DM_Sans, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { SkipToContent } from "@/components/skip-to-content";
-import {
-  A11Y_PREFERENCES_COOKIE,
-  a11yHtmlDataAttributes,
-  parseA11yCookie,
-} from "@/lib/a11y-preferences";
+import { A11yColorVisionFilters } from "@/components/a11y-color-vision-filters";
+import { A11Y_PREFERENCES_COOKIE, a11yHtmlDataProps, parseA11yCookie } from "@/lib/a11y-preferences";
 import { cn } from "@/lib/utils";
 
 const dmSans = DM_Sans({
@@ -52,17 +49,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const prefs = parseA11yCookie(cookies().get(A11Y_PREFERENCES_COOKIE)?.value);
-  const d = a11yHtmlDataAttributes(prefs);
+  const htmlA11y = a11yHtmlDataProps(prefs);
 
   return (
-    <html
-      lang="fr"
-      suppressHydrationWarning
-      {...(d["data-a11y-font"] ? { "data-a11y-font": d["data-a11y-font"] } : {})}
-      {...(d["data-a11y-high-contrast"] ? { "data-a11y-high-contrast": d["data-a11y-high-contrast"] } : {})}
-      {...(d["data-a11y-reduce-motion"] ? { "data-a11y-reduce-motion": d["data-a11y-reduce-motion"] } : {})}
-    >
+    <html lang="fr" suppressHydrationWarning {...htmlA11y}>
       <body className={cn(dmSans.variable, dmMono.variable, playfair.variable, "min-h-screen font-sans antialiased")}>
+        <A11yColorVisionFilters />
         <SkipToContent />
         <Providers a11y={prefs}>{children}</Providers>
       </body>
