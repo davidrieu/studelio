@@ -16,7 +16,8 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const MAX_USER_CHARS = 12_000;
-const MAX_HISTORY_MESSAGES = 32;
+/** Nombre max de messages (user + André) envoyés au modèle — les plus récents uniquement. */
+const MAX_HISTORY_MESSAGES = 36;
 
 /** Déclencheur interne : l’élève n’a rien écrit ; André ouvre la séance. */
 const PROGRAMME_GUIDED_BOOTSTRAP_USER = `[Ouverture de séance « Programme guidé ». L’élève vient d’entrer dans l’interface immersive : il n’a pas encore écrit. Accueille-le brièvement (ton cool et rassurant), expose en 2–4 phrases le plan de travail que tu vas mener (en t’appuyant sur le programme et son profil), puis propose immédiatement le premier exercice concret avec une seule consigne claire — sans lui demander de choisir un thème ni un chapitre.]`;
@@ -204,11 +205,16 @@ export async function POST(req: Request) {
     });
   }
 
-  const historyRows = await prisma.chatMessage.findMany({
+  const totalMessagesInSession = await prisma.chatMessage.count({
     where: { sessionId: chatSessionId! },
-    orderBy: { createdAt: "asc" },
+  });
+  const historyRowsDesc = await prisma.chatMessage.findMany({
+    where: { sessionId: chatSessionId! },
+    orderBy: { createdAt: "desc" },
     take: MAX_HISTORY_MESSAGES,
   });
+  const historyRows = historyRowsDesc.slice().reverse();
+  const historyTruncatedEarly = totalMessagesInSession > MAX_HISTORY_MESSAGES;
 
   const anthropicMessages: MessageParam[] = [];
   for (const row of historyRows) {
@@ -312,6 +318,8 @@ export async function POST(req: Request) {
           programme: programmeCtx,
           chapterProgressSummary,
           recentFreeChatDigest: recentDigest,
+          historyTruncatedEarly,
+          visibleMessageCount: historyRows.length,
         })
       : buildAndreSystemPrompt({
           studentFirstName: firstName,

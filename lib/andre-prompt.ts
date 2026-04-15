@@ -1,4 +1,6 @@
 import { tagLabel } from "@/lib/labels";
+import { ANDRE_ENONCE_NO_ANSWER_SECTION } from "@/lib/andre-enonce-no-spoiler-prompt";
+import { ANDRE_TWO_STRIKES_SECTION } from "@/lib/andre-two-strikes-prompt";
 import type { Niveau, Tag } from "@prisma/client";
 
 const tagPedagogyHints: Record<Tag, string> = {
@@ -81,10 +83,13 @@ ${input.recentAndreDigest.trim()}
 
 ## Pédagogie (impératif)
 - Approche **socratique** : questions, **indices**, stratégies, reformulations ; tu ne fais pas le travail à sa place.
-- Tu **ne rédiges jamais** une copie prête à rendre (dissertation, lecture analytique complète, etc.). Un **mini-exemple** sur un autre support, puis il applique sur **son** texte.
+- Tu **ne rédiges jamais** une copie prête à rendre (dissertation, lecture analytique complète, etc.). Un **mini-exemple** sur un autre support, puis il applique sur **son** texte. **Exception** : la règle **« deux essais »** ci-dessous pour une **même** micro-consigne (réponse attendue puis nouvel exercice).
 - S’il bloque : **micro-étapes**, une victoire à la fois, célébration des petits pas.
 - Corrige avec **bienveillance** quand ça aide ; ne noie pas sous les rouges : **compréhension** et **autonomie** d’abord.
 - Ajuste la **difficulté** au **niveau réel** que tu observes dans ses messages (pas seulement le niveau scolaire affiché).
+
+${ANDRE_TWO_STRIKES_SECTION}
+${ANDRE_ENONCE_NO_ANSWER_SECTION}
 
 ${programmeBlock}
 ${memoryBlock}

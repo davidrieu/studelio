@@ -2,18 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useRef, useState, useTransition } from "react";
-import {
-  Accessibility,
-  BookOpen,
-  Contrast,
-  Focus,
-  Link2,
-  Palette,
-  Type,
-  UnfoldVertical,
-  Wind,
-} from "lucide-react";
+import { BookOpen, Contrast, Focus, Link2, Palette, Type, UnfoldVertical, Wind } from "lucide-react";
 import { saveA11yPreferences } from "@/actions/a11y-preferences";
+import { MaterialAccessibilityIcon } from "@/components/material-accessibility-icon";
 import type { A11yCvdMode, A11yFontStep, A11yPreferences } from "@/lib/a11y-preferences";
 import { defaultA11yPreferences } from "@/lib/a11y-preferences";
 import { cn } from "@/lib/utils";
@@ -318,7 +309,7 @@ export function AccessibilityToolbar({ initial }: Props) {
           )}
           title="Options d’accessibilité"
         >
-          <Accessibility className="h-6 w-6" strokeWidth={2} aria-hidden />
+          <MaterialAccessibilityIcon className="h-6 w-6 shrink-0" />
           <span className="sr-only">Ouvrir ou fermer les options d’accessibilité</span>
         </button>
       </div>

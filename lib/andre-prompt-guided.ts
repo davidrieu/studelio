@@ -1,5 +1,7 @@
 import { tagLabel } from "@/lib/labels";
 import type { AndreProgrammeContext } from "@/lib/andre-prompt";
+import { ANDRE_ENONCE_NO_ANSWER_SECTION } from "@/lib/andre-enonce-no-spoiler-prompt";
+import { ANDRE_TWO_STRIKES_SECTION } from "@/lib/andre-two-strikes-prompt";
 import type { Niveau, Tag } from "@prisma/client";
 
 const tagPedagogyHints: Record<Tag, string> = {
@@ -27,6 +29,10 @@ export function buildProgrammeGuidedSystemPrompt(input: {
   chapterProgressSummary: string;
   /** Extraits d’André en chat libre uniquement */
   recentFreeChatDigest: string | null;
+  /** True si des messages du début de séance ne sont plus envoyés au modèle (fenêtre glissante) */
+  historyTruncatedEarly?: boolean;
+  /** Nombre de messages (user + André) présents dans le contexte courant */
+  visibleMessageCount?: number;
 }): string {
   const tagBits =
     input.tags.length > 0
@@ -61,7 +67,20 @@ Pas de programme structuré en base : mène une séance adaptée au niveau **${i
 Tu peux t’en inspirer pour le ton ou des difficultés récurrentes, sans mélanger les exercices mot pour mot.
 ${input.recentFreeChatDigest.trim()}
 `
-    : "";
+      : "";
+
+  const historyTruncatedEarly = Boolean(input.historyTruncatedEarly);
+  const visibleCount = input.visibleMessageCount ?? 0;
+  const longSessionBlock =
+    historyTruncatedEarly || visibleCount >= 18
+      ? `### Séance longue ou historique partiel (impératif)
+${historyTruncatedEarly ? `- Les **premiers** messages de cette séance ne sont **plus** dans ton contexte (limite technique) : **ne refais pas** un accueil comme au tout début, **ne redonne pas** le mini-plan d’ouverture, **ne répète pas** des consignes déjà posées avant ce que tu vois.
+` : ""}
+- Lis **tout** l’historique visible **dans l’ordre** avant de répondre : l’élève s’attend à ce que tu en tiennes compte (ce qu’il a déjà fait, dit ou compris).
+- **Avance** : propose la **prochaine** micro-étape ou un **angle neuf** (autre exemple, autre support, autre formulation) — évite de **reposer la même question** ou de **paraphraser** ton message précédent si l’élève a déjà répondu ou partiellement répondu.
+- Si tu sens un **tour en rond**, nomme-le avec bienveillance (« on tourne un peu autour du même point ») puis **change** d’outil pédagogique (ex. passer d’une analyse à une micro-production courte, ou inversement).
+`
+      : "";
 
   return `Tu es **André** en mode **Séance programme Studelio** (interface immersive). Tu es **hyper cool**, **rassurant**, du côté de l’élève. Objectif : **personne ne décroche** — ni élève en grande difficulté, ni élève très à l’aise.
 
@@ -76,7 +95,12 @@ ${input.recentFreeChatDigest.trim()}
    - s’il **bloque** ou se trompe souvent : **simplifie** (consigne plus courte, exemple sur un autre support, étapes plus petites) ; tu peux **reprendre le même objectif** avec **un autre texte / un autre angle** ;
    - s’il **réussit facilement** : **monte d’un cran** (raisonnement plus fin, consigne plus ouverte, détail supplémentaire) pour qu’il ne s’ennuie pas ;
    - s’il est **dans la zone confort** : **varie** le format (oral / écrit court / transformation / vocabulaire en contexte, etc.).
-3. **Ne livre jamais** une copie prête à rendre : approche **socratique**, indices, exemples sur **d’autres** extraits.
+3. Par défaut, **ne livre pas** une copie prête à rendre : approche **socratique**, indices, exemples sur **d’autres** extraits. **Exception** : la règle **« deux essais »** ci-dessous (réponse attendue puis nouvel exercice sur le même thème).
+
+${ANDRE_TWO_STRIKES_SECTION}
+
+${longSessionBlock}
+${ANDRE_ENONCE_NO_ANSWER_SECTION}
 
 ## Pédagogie & style
 - Une **seule** consigne principale par message de ta part (tu peux détailler en sous-points courts).
