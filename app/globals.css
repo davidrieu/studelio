@@ -135,3 +135,51 @@
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
 }
+
+/* Accessibilité — attributs data-* sur <html> (cookie studelio-a11y, voir lib/a11y-preferences) */
+html[data-a11y-font="1"] {
+  font-size: 106.25%;
+}
+html[data-a11y-font="2"] {
+  font-size: 112.5%;
+}
+html[data-a11y-font="3"] {
+  font-size: 118.75%;
+}
+
+html[data-a11y-high-contrast="true"] {
+  --studelio-border: rgba(15, 23, 42, 0.35);
+  --studelio-text-body: #0f172a;
+  --ring: oklch(0.42 0.18 264);
+  --border: oklch(0.55 0.04 264);
+}
+html[data-a11y-high-contrast="true"] .dark {
+  --studelio-border: rgba(245, 247, 255, 0.45);
+  --studelio-text-body: #f8fafc;
+  --ring: oklch(0.78 0.12 264);
+  --border: oklch(0.72 0.06 264);
+}
+html[data-a11y-high-contrast="true"] :focus-visible {
+  outline: 3px solid var(--studelio-blue);
+  outline-offset: 3px;
+}
+
+html[data-a11y-reduce-motion="true"] *,
+html[data-a11y-reduce-motion="true"] *::before,
+html[data-a11y-reduce-motion="true"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

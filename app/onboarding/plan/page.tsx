@@ -47,7 +47,11 @@ export default async function OnboardingPlanPage({
   const subRequired = firstParam(searchParams.sub) === "required";
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-6xl flex-col justify-center gap-8 px-4 py-12">
+    <main
+      id="contenu-principal"
+      tabIndex={-1}
+      className="mx-auto flex min-h-screen max-w-6xl flex-col justify-center gap-8 px-4 py-12 outline-none"
+    >
       {subRequired ? (
         <p
           className="rounded-xl border border-[var(--studelio-blue)]/30 bg-[var(--studelio-blue-dim)]/40 px-4 py-3 text-sm text-[var(--studelio-text-body)]"
@@ -72,6 +76,6 @@ export default async function OnboardingPlanPage({
         subscriptionStatus={sub?.status ?? "INCOMPLETE"}
         canceledCheckout={canceledCheckout}
       />
-    </div>
+    </main>
   );
 }

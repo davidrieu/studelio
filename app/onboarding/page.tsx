@@ -25,12 +25,16 @@ export default async function OnboardingPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-lg flex-col justify-center gap-6 px-4 py-12">
+    <main
+      id="contenu-principal"
+      tabIndex={-1}
+      className="mx-auto flex min-h-screen max-w-lg flex-col justify-center gap-6 px-4 py-12 outline-none"
+    >
       <div>
         <h1 className="font-display text-3xl font-semibold text-[var(--studelio-text)]">Personnaliser Studelio</h1>
         <p className="mt-2 text-[var(--studelio-text-body)]">Quelques réponses pour qu’André te parle vraiment à toi.</p>
       </div>
       <OnboardingForm niveau={profile.niveau} />
-    </div>
+    </main>
   );
 }

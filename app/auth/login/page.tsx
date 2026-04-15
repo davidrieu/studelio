@@ -12,7 +12,11 @@ export default function LoginPage() {
       : `v${build.semver} · ${build.branch ?? "?"}@${build.commitShort}${build.vercelEnv === "preview" ? " (preview)" : ""}`;
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[var(--studelio-bg-soft)] px-4 py-12">
+    <main
+      id="contenu-principal"
+      tabIndex={-1}
+      className="flex min-h-screen flex-col items-center justify-center bg-[var(--studelio-bg-soft)] px-4 py-12 outline-none"
+    >
       <div className="mb-8 flex flex-col items-center text-center">
         <h1 className="sr-only">Studelio — Connexion</h1>
         <StudelioLogo size="lg" className="mx-auto" priority />
@@ -34,6 +38,6 @@ export default function LoginPage() {
           {deployLabel}
         </p>
       </div>
-    </div>
+    </main>
   );
 }

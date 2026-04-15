@@ -3,7 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 export default function ForgotPasswordPage() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[var(--studelio-bg-soft)] px-4 py-12">
+    <main
+      id="contenu-principal"
+      tabIndex={-1}
+      className="flex min-h-screen flex-col items-center justify-center bg-[var(--studelio-bg-soft)] px-4 py-12 outline-none"
+    >
       <div className="w-full max-w-md">
         <Card className="border-[var(--studelio-border)] shadow-[var(--studelio-shadow)]">
           <CardHeader>
@@ -19,6 +23,6 @@ export default function ForgotPasswordPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </main>
   );
 }

@@ -1,7 +1,14 @@
 import type { Metadata, Viewport } from "next";
+import { cookies } from "next/headers";
 import { DM_Mono, DM_Sans, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
+import { SkipToContent } from "@/components/skip-to-content";
+import {
+  A11Y_PREFERENCES_COOKIE,
+  a11yHtmlDataAttributes,
+  parseA11yCookie,
+} from "@/lib/a11y-preferences";
 import { cn } from "@/lib/utils";
 
 const dmSans = DM_Sans({
@@ -44,10 +51,20 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const prefs = parseA11yCookie(cookies().get(A11Y_PREFERENCES_COOKIE)?.value);
+  const d = a11yHtmlDataAttributes(prefs);
+
   return (
-    <html lang="fr" suppressHydrationWarning>
+    <html
+      lang="fr"
+      suppressHydrationWarning
+      {...(d["data-a11y-font"] ? { "data-a11y-font": d["data-a11y-font"] } : {})}
+      {...(d["data-a11y-high-contrast"] ? { "data-a11y-high-contrast": d["data-a11y-high-contrast"] } : {})}
+      {...(d["data-a11y-reduce-motion"] ? { "data-a11y-reduce-motion": d["data-a11y-reduce-motion"] } : {})}
+    >
       <body className={cn(dmSans.variable, dmMono.variable, playfair.variable, "min-h-screen font-sans antialiased")}>
-        <Providers>{children}</Providers>
+        <SkipToContent />
+        <Providers a11y={prefs}>{children}</Providers>
       </body>
     </html>
   );

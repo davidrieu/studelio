@@ -4,7 +4,11 @@ import { cn } from "@/lib/utils";
 
 export default function HomePage() {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[var(--studelio-bg-soft)]">
+    <main
+      id="contenu-principal"
+      tabIndex={-1}
+      className="relative min-h-screen overflow-hidden bg-[var(--studelio-bg-soft)] outline-none"
+    >
       <div className="studelio-grain pointer-events-none absolute inset-0" aria-hidden />
       <div className="relative mx-auto flex min-h-screen max-w-2xl flex-col items-center justify-center gap-8 px-6 text-center">
         <h1 className="font-display text-4xl font-semibold italic text-[var(--studelio-text)] sm:text-5xl">Studelio</h1>
@@ -30,6 +34,6 @@ export default function HomePage() {
           La page d’accueil marketing finale sera sur WordPress (hors scope) ; ceci sert de point d’entrée pour le développement.
         </p>
       </div>
-    </div>
+    </main>
   );
 }
