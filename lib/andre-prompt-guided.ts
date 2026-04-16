@@ -2,7 +2,7 @@ import { tagLabel } from "@/lib/labels";
 import type { AndreProgrammeContext } from "@/lib/andre-prompt";
 import { ANDRE_ENONCE_NO_ANSWER_SECTION } from "@/lib/andre-enonce-no-spoiler-prompt";
 import { ANDRE_TWO_STRIKES_SECTION } from "@/lib/andre-two-strikes-prompt";
-import { COMPETENCY_RADAR_LABELS, STUDELIO_META_MARKER } from "@/lib/programme-guided-meta";
+import { COMPETENCY_RADAR_LABELS } from "@/lib/programme-guided-meta";
 import type { Niveau, Tag } from "@prisma/client";
 
 const tagPedagogyHints: Record<Tag, string> = {
