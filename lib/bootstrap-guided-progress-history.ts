@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { stripProgrammeGuidedMeta, type ParsedProgrammeGuidedMeta } from "@/lib/programme-guided-meta";
 import { applyProgrammeGuidedSessionMeta } from "@/lib/apply-programme-guided-session-meta";
@@ -13,7 +14,7 @@ function isGuidedMetaReplayed(errorProfile: unknown): boolean {
   return Boolean((nest as Record<string, unknown>).guidedMetaReplayed);
 }
 
-function withGuidedMetaReplayedFlag(errorProfile: unknown): Record<string, unknown> {
+function withGuidedMetaReplayedFlag(errorProfile: unknown): Prisma.InputJsonValue {
   const base =
     errorProfile && typeof errorProfile === "object" && !Array.isArray(errorProfile)
       ? { ...(errorProfile as Record<string, unknown>) }
@@ -23,7 +24,7 @@ function withGuidedMetaReplayedFlag(errorProfile: unknown): Record<string, unkno
       ? { ...(base.__studelio as Record<string, unknown>) }
       : {};
   base.__studelio = { ...prev, guidedMetaReplayed: true };
-  return base;
+  return base as Prisma.InputJsonValue;
 }
 
 /**
