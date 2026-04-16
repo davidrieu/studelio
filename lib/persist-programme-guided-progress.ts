@@ -45,7 +45,7 @@ export async function persistProgrammeGuidedProgressTurn(input: {
       meta: proseMeta,
     });
     return {
-      studelioProgressHint: `${studelioProgressHintMeta(proseMeta)} — secours texte (mini +).`,
+      studelioProgressHint: `${studelioProgressHintMeta(proseMeta)} (déduit du texte d’André).`,
       studelioProgressDelta: buildStudelioProgressDeltaFromMeta(proseMeta, "prose"),
     };
   }
