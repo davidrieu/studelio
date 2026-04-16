@@ -16,6 +16,7 @@ import {
 import { findStudentChapterProgressRowsSafe } from "@/lib/load-student-chapter-progress-safe";
 import { prisma } from "@/lib/prisma";
 import { stripProgrammeGuidedMeta } from "@/lib/programme-guided-meta";
+import type { StudelioProgressDeltaPayload } from "@/lib/studelio-progress-delta";
 import { ensureStudentProgrammeLinkedToCanonical } from "@/lib/student-programme-canonical";
 import { MINUTES_PER_CHAT_ROUND, recordStudentActivity } from "@/lib/record-student-activity";
 
@@ -475,6 +476,7 @@ export async function POST(req: Request) {
         });
 
         let studelioProgressHint: string | null = null;
+        let studelioProgressDelta: StudelioProgressDeltaPayload | null = null;
         if (isGuided) {
           if (!guidedPersistProgrammeId) {
             studelioProgressHint =
@@ -487,6 +489,7 @@ export async function POST(req: Request) {
                 assistantText,
               });
               studelioProgressHint = out.studelioProgressHint;
+              studelioProgressDelta = out.studelioProgressDelta;
               revalidateProgrammeProgressViews();
             } catch (e) {
               console.error("[chat] programme guided progress", e);
@@ -510,6 +513,7 @@ export async function POST(req: Request) {
             output: final.usage?.output_tokens ?? null,
           },
           ...(studelioProgressHint ? { studelioProgressHint } : {}),
+          ...(studelioProgressDelta ? { studelioProgressDelta } : {}),
         });
       } catch (e) {
         console.error("[chat]", e);

@@ -1,12 +1,16 @@
 "use client";
 
 import { BookMarked, Info, MessageCircle, Sparkles, TrendingUp } from "lucide-react";
+import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChatMarkdown } from "@/components/chat-markdown";
+import type { CompetencyScores } from "@/lib/programme-guided-meta";
 import { previewWithoutMetaTail } from "@/lib/programme-guided-meta";
 import { emitProgrammeProgressUpdated } from "@/lib/studelio-programme-progress-events";
+import type { StudelioProgressDeltaPayload } from "@/lib/studelio-progress-delta";
+import { isStudelioProgressDeltaPayload } from "@/lib/studelio-progress-delta";
 import { IconTooltipAction } from "@/components/icon-tooltip-action";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -23,6 +27,15 @@ const STORAGE_KEY = "studelio.programmeGuidedSessionId";
 const PRESET_EXERCISE = "Je fais l’exercice proposé.";
 const PRESET_CLASS =
   "Je préfère qu’on s’appuie d’abord sur ce qu’on fait en ce moment en cours de français avant de continuer.";
+
+const RADAR_SHORT: Record<keyof CompetencyScores, string> = {
+  grammaire: "Gram.",
+  orthographe: "Orth.",
+  conjugaison: "Conj.",
+  vocabulaire: "Vocab.",
+  expressionEcrite: "Écrit.",
+  lecture: "Lect.",
+};
 
 type MsgRole = "USER" | "ANDRE";
 
@@ -46,6 +59,7 @@ async function consumeChatStream(
   receivedDone: boolean;
   streamError: string | null;
   studelioProgressHint: string | null;
+  studelioProgressDelta: StudelioProgressDeltaPayload | null;
 }> {
   if (!res.body) throw new Error("empty body");
   const reader = res.body.getReader();
@@ -55,6 +69,7 @@ async function consumeChatStream(
   let receivedDone = false;
   let streamError: string | null = null;
   let studelioProgressHint: string | null = null;
+  let studelioProgressDelta: StudelioProgressDeltaPayload | null = null;
 
   const handlePayload = (payload: Record<string, unknown>) => {
     if (payload.type === "session" && typeof payload.id === "string") {
@@ -72,6 +87,8 @@ async function consumeChatStream(
       receivedDone = true;
       const h = payload.studelioProgressHint;
       if (typeof h === "string" && h.trim()) studelioProgressHint = h.trim();
+      const d = payload.studelioProgressDelta;
+      if (isStudelioProgressDeltaPayload(d)) studelioProgressDelta = d;
       handlers.onDone();
     }
   };
@@ -100,12 +117,32 @@ async function consumeChatStream(
     parseDataLine(line);
   }
 
-  return { assistant, receivedDone, streamError, studelioProgressHint };
+  return { assistant, receivedDone, streamError, studelioProgressHint, studelioProgressDelta };
 }
 
 type SessionProps = {
   contextBanner: ProgrammeSeanceContextBanner;
 };
+
+function formatDeltaChips(d: StudelioProgressDeltaPayload): string {
+  const parts: string[] = [];
+  (Object.keys(RADAR_SHORT) as (keyof CompetencyScores)[]).forEach((k) => {
+    const v = d.radarDelta[k];
+    if (v && v > 0) parts.push(`+${Math.round(v)} ${RADAR_SHORT[k]}`);
+  });
+  for (const m of d.moduleDeltas) {
+    if (!m.units || m.units <= 0) continue;
+    parts.push(m.order === 0 ? `+${m.units} barre` : `+${m.units} M${m.order}`);
+  }
+  const s = parts.join(" · ");
+  return s.length > 52 ? `${s.slice(0, 49)}…` : s;
+}
+
+function deltaKindLabel(kind: StudelioProgressDeltaPayload["kind"]): string {
+  if (kind === "micro") return "Auto";
+  if (kind === "prose") return "Texte";
+  return "META";
+}
 
 export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
   const router = useRouter();
@@ -118,6 +155,10 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
   const [error, setError] = useState<string | null>(null);
   const [progressHint, setProgressHint] = useState<string | null>(null);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  /** Points Parcours affichés à côté du message André correspondant (id message serveur). */
+  const [deltasByMessageId, setDeltasByMessageId] = useState<Record<string, StudelioProgressDeltaPayload>>({});
+  /** Somme des `displayPoints` pour cette séance (mémoire locale). */
+  const [sessionParcoursPoints, setSessionParcoursPoints] = useState(0);
   const bottomRef = useRef<HTMLDivElement>(null);
   const startedRef = useRef(false);
 
@@ -135,7 +176,7 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
-  const loadMessages = useCallback(async (sid: string): Promise<number> => {
+  const loadMessages = useCallback(async (sid: string): Promise<{ count: number; lastAndreId: string | null }> => {
     setLoadingMessages(true);
     setError(null);
     try {
@@ -146,15 +187,22 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
         sessionStorage.removeItem(STORAGE_KEY);
         setError("Séance introuvable — on repart à zéro.");
         setSessionId(null);
-        return 0;
+        return { count: 0, lastAndreId: null };
       }
       const data = (await res.json()) as { messages?: ChatMessageRow[] };
       const list = data.messages ?? [];
       setMessages(list);
-      return list.length;
+      let lastAndreId: string | null = null;
+      for (let i = list.length - 1; i >= 0; i--) {
+        if (list[i].role === "ANDRE") {
+          lastAndreId = list[i].id;
+          break;
+        }
+      }
+      return { count: list.length, lastAndreId };
     } catch {
       setError("Impossible de charger la séance.");
-      return 0;
+      return { count: 0, lastAndreId: null };
     } finally {
       setLoadingMessages(false);
     }
@@ -180,16 +228,17 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
       }
 
       let newId: string | null = null;
-      const { assistant, receivedDone, streamError, studelioProgressHint } = await consumeChatStream(res, {
-        onSession: (id) => {
-          newId = id;
-          setSessionId(id);
-          sessionStorage.setItem(STORAGE_KEY, id);
-        },
-        onDelta: (a) => setStreamText(a),
-        onError: (m) => setError(m),
-        onDone: () => {},
-      });
+      const { assistant, receivedDone, streamError, studelioProgressHint, studelioProgressDelta } =
+        await consumeChatStream(res, {
+          onSession: (id) => {
+            newId = id;
+            setSessionId(id);
+            sessionStorage.setItem(STORAGE_KEY, id);
+          },
+          onDelta: (a) => setStreamText(a),
+          onError: (m) => setError(m),
+          onDone: () => {},
+        });
 
       if (!receivedDone && !streamError && !assistant) {
         setError(
@@ -200,7 +249,11 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
       if (studelioProgressHint) setProgressHint(studelioProgressHint);
 
       if (newId) {
-        await loadMessages(newId);
+        const { lastAndreId } = await loadMessages(newId);
+        if (lastAndreId && studelioProgressDelta && studelioProgressDelta.displayPoints > 0) {
+          setDeltasByMessageId((prev) => ({ ...prev, [lastAndreId]: studelioProgressDelta }));
+          setSessionParcoursPoints((p) => p + Math.round(studelioProgressDelta.displayPoints));
+        }
       }
       if (!streamError && (receivedDone || assistant.trim().length > 0)) {
         emitProgrammeProgressUpdated();
@@ -222,7 +275,7 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
       const stored = sessionStorage.getItem(STORAGE_KEY);
       if (stored) {
         setSessionId(stored);
-        const n = await loadMessages(stored);
+        const { count: n } = await loadMessages(stored);
         if (n === 0) {
           sessionStorage.removeItem(STORAGE_KEY);
           setSessionId(null);
@@ -279,12 +332,13 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
         return;
       }
 
-      const { assistant, receivedDone, streamError, studelioProgressHint } = await consumeChatStream(res, {
-        onSession: () => {},
-        onDelta: (a) => setStreamText(a),
-        onError: (m) => setError(m),
-        onDone: () => {},
-      });
+      const { assistant, receivedDone, streamError, studelioProgressHint, studelioProgressDelta } =
+        await consumeChatStream(res, {
+          onSession: () => {},
+          onDelta: (a) => setStreamText(a),
+          onError: (m) => setError(m),
+          onDone: () => {},
+        });
 
       if (!receivedDone && !streamError && !assistant) {
         setError("Réponse incomplète — réessaie.");
@@ -292,7 +346,11 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
 
       if (studelioProgressHint) setProgressHint(studelioProgressHint);
 
-      await loadMessages(sessionId);
+      const { lastAndreId } = await loadMessages(sessionId);
+      if (lastAndreId && studelioProgressDelta && studelioProgressDelta.displayPoints > 0) {
+        setDeltasByMessageId((prev) => ({ ...prev, [lastAndreId]: studelioProgressDelta }));
+        setSessionParcoursPoints((p) => p + Math.round(studelioProgressDelta.displayPoints));
+      }
       if (!streamError && (receivedDone || assistant.trim().length > 0)) {
         emitProgrammeProgressUpdated();
         router.refresh();
@@ -318,6 +376,9 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
     setMessages([]);
     setError(null);
     setStreamText("");
+    setDeltasByMessageId({});
+    setSessionParcoursPoints(0);
+    setProgressHint(null);
     setBootstrapping(true);
     void runBootstrap();
   }
@@ -331,6 +392,17 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
             <p className="text-xs text-muted-foreground">
               André mène la séance ; en dessous de chaque message d’André tu peux choisir un raccourci ou écrire librement.
             </p>
+            {sessionParcoursPoints > 0 ? (
+              <p
+                className="mt-1.5 inline-flex max-w-full items-center gap-1.5 rounded-full border border-emerald-500/35 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-900 dark:text-emerald-100"
+                aria-live="polite"
+              >
+                <Sparkles className="size-3.5 shrink-0 opacity-90" aria-hidden />
+                <span className="min-w-0 truncate">
+                  Cette séance · +{sessionParcoursPoints} pts Parcours (cumul)
+                </span>
+              </p>
+            ) : null}
           </div>
           <div className="flex shrink-0 items-center gap-1">
             <IconTooltipAction label="Nouvelle séance">
@@ -395,27 +467,57 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
             <p className="text-sm text-muted-foreground">Préparation de ta séance…</p>
           ) : null}
 
-          {messages.map((m) => (
-            <div
-              key={m.id}
-              className={cn("flex", m.role === "USER" ? "justify-end" : "justify-start")}
-            >
+          {messages.map((m) => {
+            const delta = m.role === "ANDRE" ? deltasByMessageId[m.id] : undefined;
+            return (
               <div
-                className={cn(
-                  "max-w-[min(100%,40rem)] rounded-2xl px-4 py-3 text-sm leading-relaxed",
-                  m.role === "USER"
-                    ? "bg-[var(--studelio-blue)] text-primary-foreground"
-                    : "border border-[var(--studelio-border)] bg-card text-[var(--studelio-text-body)] shadow-sm",
-                )}
+                key={m.id}
+                className={cn("flex w-full", m.role === "USER" ? "justify-end" : "justify-start")}
               >
-                {m.role === "ANDRE" ? (
-                  <ChatMarkdown content={m.role === "ANDRE" ? previewWithoutMetaTail(m.content) : m.content} />
-                ) : (
-                  <p className="whitespace-pre-wrap">{m.content}</p>
-                )}
+                <div
+                  className={cn(
+                    "flex min-w-0 max-w-full items-start gap-2",
+                    m.role === "USER" ? "flex-row-reverse" : "flex-row",
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "min-w-0 max-w-[min(100%,40rem)] rounded-2xl px-4 py-3 text-sm leading-relaxed",
+                      m.role === "USER"
+                        ? "bg-[var(--studelio-blue)] text-primary-foreground"
+                        : "border border-[var(--studelio-border)] bg-card text-[var(--studelio-text-body)] shadow-sm",
+                    )}
+                  >
+                    {m.role === "ANDRE" ? (
+                      <ChatMarkdown content={m.role === "ANDRE" ? previewWithoutMetaTail(m.content) : m.content} />
+                    ) : (
+                      <p className="whitespace-pre-wrap">{m.content}</p>
+                    )}
+                  </div>
+                  {m.role === "ANDRE" && delta ? (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.85, y: 6 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      transition={{ type: "spring", stiffness: 420, damping: 24 }}
+                      className="w-[5.25rem] shrink-0 rounded-2xl border border-emerald-500/35 bg-gradient-to-b from-emerald-500/15 to-emerald-600/5 px-2 py-2 text-center shadow-sm dark:from-emerald-950/50 dark:to-emerald-950/20"
+                      aria-label={`Parcours : plus ${Math.round(delta.displayPoints)} points`}
+                    >
+                      <span className="font-display text-lg font-bold tabular-nums text-emerald-700 dark:text-emerald-300">
+                        +{Math.round(delta.displayPoints)}
+                      </span>
+                      <span className="mt-0.5 block text-[9px] font-semibold uppercase tracking-wide text-emerald-800/90 dark:text-emerald-200/90">
+                        Parcours
+                      </span>
+                      <span className="mt-1 block text-[10px] leading-tight text-muted-foreground">
+                        {formatDeltaChips(delta)}
+                      </span>
+                      <span className="mt-1 block text-[9px] text-muted-foreground/80">{deltaKindLabel(delta.kind)}</span>
+                    </motion.div>
+                  ) : null}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           {streamText ? (
             <div className="flex justify-start">
@@ -520,8 +622,8 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
             </Button>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
-            Entrée pour envoyer · Maj+Entrée pour une ligne · Après chaque réponse d’André, un encart vert résume les
-            points enregistrés sur ton parcours (radar & modules)
+            Entrée pour envoyer · Maj+Entrée pour une ligne · Après chaque réponse d’André : encart vert sous le fil +
+            pastille à droite du message avec les points Parcours enregistrés pour ce tour.
           </p>
         </div>
       </div>

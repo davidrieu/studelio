@@ -4,17 +4,27 @@ import { bumpProgrammeGuidedMicroProgress } from "@/lib/bump-programme-guided-mi
 import { ensureProgrammeStandardModules } from "@/lib/ensure-programme-standard-modules";
 import { inferProgrammeProgressProseFallback } from "@/lib/infer-programme-progress-prose";
 import { stripProgrammeGuidedMeta } from "@/lib/programme-guided-meta";
+import {
+  buildStudelioProgressDeltaFromMeta,
+  buildStudelioProgressDeltaMicro,
+  type StudelioProgressDeltaPayload,
+} from "@/lib/studelio-progress-delta";
 import { studelioProgressHintMeta, studelioProgressHintMicro } from "@/lib/studelio-progress-user-hint";
+
+export type PersistProgrammeGuidedProgressResult = {
+  studelioProgressHint: string | null;
+  studelioProgressDelta: StudelioProgressDeltaPayload;
+};
 
 /**
  * Après une réponse André en séance programme : aligne les modules en base, applique META ou micro-bump,
- * retourne le texte court pour l’UI.
+ * retourne le texte court et le détail des points pour l’UI (badges + total session).
  */
 export async function persistProgrammeGuidedProgressTurn(input: {
   studentProfileId: string;
   programmeId: string;
   assistantText: string;
-}): Promise<{ studelioProgressHint: string | null }> {
+}): Promise<PersistProgrammeGuidedProgressResult> {
   const { studentProfileId, programmeId, assistantText } = input;
 
   await ensureProgrammeStandardModules(programmeId);
@@ -27,7 +37,10 @@ export async function persistProgrammeGuidedProgressTurn(input: {
       programmeId,
       meta: stripped.meta,
     });
-    return { studelioProgressHint: studelioProgressHintMeta(stripped.meta) };
+    return {
+      studelioProgressHint: studelioProgressHintMeta(stripped.meta),
+      studelioProgressDelta: buildStudelioProgressDeltaFromMeta(stripped.meta, "meta"),
+    };
   }
 
   if (proseMeta) {
@@ -38,11 +51,15 @@ export async function persistProgrammeGuidedProgressTurn(input: {
     });
     return {
       studelioProgressHint: `${studelioProgressHintMeta(proseMeta)} — pris en compte depuis le résumé Studelio en fin de message.`,
+      studelioProgressDelta: buildStudelioProgressDeltaFromMeta(proseMeta, "prose"),
     };
   }
 
   await bumpProgrammeGuidedMicroProgress({ studentProfileId, programmeId });
-  return { studelioProgressHint: studelioProgressHintMicro() };
+  return {
+    studelioProgressHint: studelioProgressHintMicro(),
+    studelioProgressDelta: buildStudelioProgressDeltaMicro(),
+  };
 }
 
 export function revalidateProgrammeProgressViews(): void {
