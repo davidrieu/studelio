@@ -90,3 +90,16 @@ export const suggestedInterests = [
   "Actualités",
   "Nature & environnement",
 ] as const;
+
+/** Ordre d’affichage des niveaux (formulaires paramètres / onboarding). */
+export const niveauxOrdered = [
+  "SIXIEME",
+  "CINQUIEME",
+  "QUATRIEME",
+  "TROISIEME",
+  "SECONDE",
+  "PREMIERE_GENERALE",
+  "PREMIERE_TECHNOLOGIQUE",
+  "TERMINALE",
+  "BTS",
+] as const satisfies readonly Niveau[];

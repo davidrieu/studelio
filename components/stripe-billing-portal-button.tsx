@@ -17,14 +17,14 @@ export function StripeBillingPortalButton({ disabled }: { disabled?: boolean }) 
       });
       const data = (await res.json()) as { url?: string; error?: string };
       if (!res.ok) {
-        setError(data.error ?? "Impossible d’ouvrir le portail.");
+        setError(data.error ?? "Impossible d’ouvrir la page de gestion. Réessaie dans un instant.");
         return;
       }
       if (data.url) {
         window.location.assign(data.url);
         return;
       }
-      setError("Réponse Stripe inattendue.");
+      setError("Réponse inattendue du service de paiement.");
     } catch {
       setError("Erreur réseau.");
     } finally {

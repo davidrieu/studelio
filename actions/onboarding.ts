@@ -4,7 +4,7 @@ import { Tag } from "@prisma/client";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { suggestedInterests } from "@/lib/labels";
+import { mergeInterestsFromFormFields, normalizeSuggestedInterestPicks } from "@/lib/student-interests-form";
 
 const onboardingSchema = z.object({
   tags: z.array(z.nativeEnum(Tag)).max(10),
@@ -15,15 +15,6 @@ const onboardingSchema = z.object({
 export type OnboardingState =
   | { ok: true }
   | { ok: false; message: string; fieldErrors?: Record<string, string[]> };
-
-function parseInterests(picked: string[], extra: string | undefined): string[] {
-  const fromExtra = (extra ?? "")
-    .split(/[,;\n]/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-  const merged = Array.from(new Set([...picked, ...fromExtra]));
-  return merged.map((s) => s.slice(0, 80)).slice(0, 24);
-}
 
 export async function completeOnboardingAction(
   _: OnboardingState | undefined,
@@ -38,8 +29,7 @@ export async function completeOnboardingAction(
   const rawPicked = formData.getAll("interests").filter((v): v is string => typeof v === "string");
   const extra = (formData.get("interestsExtra") as string | null) ?? undefined;
 
-  const allowedPick = new Set(suggestedInterests as unknown as string[]);
-  const interestsPicked = rawPicked.filter((s) => allowedPick.has(s));
+  const interestsPicked = normalizeSuggestedInterestPicks(rawPicked);
 
   const parsed = onboardingSchema.safeParse({
     tags: rawTags,
@@ -52,7 +42,7 @@ export async function completeOnboardingAction(
     return { ok: false, message: "Vérifie les champs du formulaire.", fieldErrors };
   }
 
-  const interests = parseInterests(parsed.data.interestsPicked, parsed.data.interestsExtra);
+  const interests = mergeInterestsFromFormFields(parsed.data.interestsPicked, parsed.data.interestsExtra);
 
   try {
     await prisma.studentProfile.update({

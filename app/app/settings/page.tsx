@@ -2,8 +2,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { StripeBillingPortalButton } from "@/components/stripe-billing-portal-button";
+import { StudentProfileSettingsForm } from "@/components/student-profile-settings-form";
 import { buttonVariants } from "@/components/ui/button";
-import { niveauLabel, planLabel, subStatusLabel, tagLabel } from "@/lib/labels";
+import { niveauLabel, planLabel, subStatusLabel } from "@/lib/labels";
 import { isStripeCustomerId } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import { subscriptionGrantsAppAccess } from "@/lib/subscription-entitlement";
@@ -29,8 +30,12 @@ export default async function SettingsPage() {
   const showBillingPortal =
     Boolean(sub && subscriptionGrantsAppAccess(sub) && isStripeCustomerId(sub.stripeCustomerId));
 
+  const profileFormKey = sp
+    ? `${sp.niveau}|${[...sp.interests].sort().join(",")}|${[...sp.tags].sort().join(",")}`
+    : "none";
+
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <header className="rounded-[20px] border border-[var(--studelio-border)] bg-gradient-to-br from-[var(--studelio-bg-soft)] to-card p-6 shadow-[var(--studelio-shadow)] sm:p-8">
         <h1 className="font-display text-2xl font-semibold text-[var(--studelio-text)]">Paramètres</h1>
         <p className="mt-2 text-sm text-[var(--studelio-text-body)]">
@@ -44,7 +49,7 @@ export default async function SettingsPage() {
         <dl className="mt-4 grid gap-3 text-sm">
           <div>
             <dt className="text-muted-foreground">E-mail</dt>
-            <dd className="font-medium text-[var(--studelio-text)]">{user.email}</dd>
+            <dd className="break-all font-medium text-[var(--studelio-text)]">{user.email}</dd>
           </div>
           <div>
             <dt className="text-muted-foreground">Nom affiché</dt>
@@ -56,30 +61,19 @@ export default async function SettingsPage() {
       {sp ? (
         <section className="rounded-[20px] border border-[var(--studelio-border)] bg-card p-6 shadow-[var(--studelio-shadow)] sm:p-8">
           <h2 className="font-display text-lg font-semibold text-[var(--studelio-text)]">Profil élève</h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Données issues de l’onboarding. Pour les modifier, contacte le support ou attends la future page d’édition.
+          <p className="mt-1 text-sm text-muted-foreground">
+            Niveau actuel affiché sur ton tableau de bord :{" "}
+            <span className="font-medium text-[var(--studelio-text)]">{niveauLabel[sp.niveau]}</span>. Tu peux tout
+            modifier ci-dessous puis enregistrer.
           </p>
-          <dl className="mt-4 grid gap-3 text-sm">
-            <div>
-              <dt className="text-muted-foreground">Niveau</dt>
-              <dd className="font-medium text-[var(--studelio-text)]">{niveauLabel[sp.niveau]}</dd>
-            </div>
-            {sp.interests.length > 0 ? (
-              <div>
-                <dt className="text-muted-foreground">Centres d’intérêt</dt>
-                <dd className="text-[var(--studelio-text-body)]">{sp.interests.join(", ")}</dd>
-              </div>
-            ) : null}
-            {sp.tags.length > 0 ? (
-              <div>
-                <dt className="text-muted-foreground">Profil déclaré</dt>
-                <dd className="text-[var(--studelio-text-body)]">{sp.tags.map((t) => tagLabel[t]).join(", ")}</dd>
-              </div>
-            ) : null}
-          </dl>
-          <p className="mt-4 text-xs text-muted-foreground">
-            Modifier niveau, intérêts ou tags depuis cette page : bientôt disponible.
-          </p>
+          <div className="mt-6 border-t border-[var(--studelio-border)]/80 pt-6">
+            <StudentProfileSettingsForm
+              key={profileFormKey}
+              niveau={sp.niveau}
+              interests={sp.interests}
+              tags={sp.tags}
+            />
+          </div>
         </section>
       ) : null}
 
@@ -88,16 +82,16 @@ export default async function SettingsPage() {
         {sub ? (
           <dl className="mt-4 grid gap-3 text-sm">
             <div>
-              <dt className="text-muted-foreground">Plan</dt>
+              <dt className="text-muted-foreground">Formule</dt>
               <dd className="font-medium text-[var(--studelio-text)]">{planLabel[sub.plan]}</dd>
             </div>
             <div>
-              <dt className="text-muted-foreground">Statut Stripe</dt>
+              <dt className="text-muted-foreground">Statut</dt>
               <dd className="font-medium text-[var(--studelio-text)]">{subStatusLabel[sub.status]}</dd>
             </div>
             {sub.currentPeriodEnd ? (
               <div>
-                <dt className="text-muted-foreground">Fin de période</dt>
+                <dt className="text-muted-foreground">Fin de période en cours</dt>
                 <dd className="font-medium text-[var(--studelio-text)]">
                   {sub.currentPeriodEnd.toLocaleDateString("fr-FR", {
                     day: "numeric",
@@ -119,16 +113,20 @@ export default async function SettingsPage() {
             {showBillingPortal ? <StripeBillingPortalButton /> : null}
           </div>
           {showBillingPortal ? (
-            <p className="max-w-xl text-xs text-muted-foreground">
-              Le portail Stripe te permet de mettre à jour la carte, télécharger les factures ou résilier. Active d’abord
-              le portail client dans le Dashboard Stripe (mode test ou live) : Paramètres → Portail client.
+            <p className="max-w-xl text-xs leading-relaxed text-muted-foreground">
+              Tu peux mettre à jour ton moyen de paiement, consulter tes factures ou arrêter ton renouvellement automatique
+              depuis l’espace sécurisé de paiement (même endroit qu’au moment de ton inscription).
             </p>
           ) : sub && subscriptionGrantsAppAccess(sub) ? (
-            <p className="max-w-xl text-xs text-muted-foreground">
-              Après ton premier paiement d’abonnement, le bouton « Gérer paiement… » apparaîtra ici pour ouvrir le
-              portail Stripe.
+            <p className="max-w-xl text-xs leading-relaxed text-muted-foreground">
+              Dès que ton premier paiement d’abonnement est bien pris en compte, le bouton « Gérer paiement, factures et
+              abonnement » apparaît ici pour accéder à l’espace de gestion.
             </p>
-          ) : null}
+          ) : (
+            <p className="max-w-xl text-xs leading-relaxed text-muted-foreground">
+              Pour souscrire ou reprendre une formule, utilise « Voir les plans ».
+            </p>
+          )}
         </div>
       </section>
     </div>
