@@ -78,6 +78,19 @@ export function normalizeSkillToLabel(raw: string): CompetencyRadarLabel | null 
   for (const [needle, label] of map) {
     if (t === needle) return label;
   }
+  const en: [string, CompetencyRadarLabel][] = [
+    ["grammar", "Grammaire"],
+    ["spelling", "Orthographe"],
+    ["conjugation", "Conjugaison"],
+    ["vocabulary", "Vocabulaire"],
+    ["reading", "Lecture"],
+    ["writing", "Expression écrite"],
+    ["written expression", "Expression écrite"],
+    ["written comprehension", "Lecture"],
+  ];
+  for (const [needle, label] of en) {
+    if (t === needle) return label;
+  }
   return null;
 }
 
@@ -85,8 +98,8 @@ export function labelToPrismaField(label: CompetencyRadarLabel): keyof Competenc
   return labelToDbKey[label];
 }
 
-/** Dernière occurrence du marqueur (tolère espaces, casse, \r\n). */
-const META_BLOCK_RE = /\[\[\s*STUDELIO_META\s*\]\]/gi;
+/** Dernière occurrence du marqueur (tolère espaces, casse, tiret / underscore, \r\n). */
+const META_BLOCK_RE = /\[\[\s*STUDELIO\s*[-_]?\s*META\s*\]\]/gi;
 
 function findLastMetaBlock(raw: string): { blockStart: number; blockEnd: number } | null {
   let last: { blockStart: number; blockEnd: number } | null = null;
@@ -203,6 +216,17 @@ export function stripProgrammeGuidedMeta(raw: string): { content: string; meta: 
     }
     if (chapterOrders.length === 0 && skills.length > 0) {
       chapterOrders = inferChapterOrdersFromSkills(skills);
+    }
+
+    const maxModuleOrder = STUDELIO_STANDARD_MODULES_DEF.reduce((acc, m) => Math.max(acc, m.order), 0);
+    chapterOrders = chapterOrders.filter((o) => Number.isInteger(o) && o >= 1 && o <= maxModuleOrder);
+
+    if (skills.length === 0 && chapterOrders.length > 0) {
+      inferSkillsFromChapterOrders(chapterOrders, seen, skills);
+    }
+    if (chapterOrders.length === 0 && skills.length > 0) {
+      chapterOrders = inferChapterOrdersFromSkills(skills);
+      chapterOrders = chapterOrders.filter((o) => o >= 1 && o <= maxModuleOrder);
     }
 
     if (skills.length === 0 && chapterOrders.length === 0) {

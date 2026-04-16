@@ -165,6 +165,10 @@ export async function POST(req: Request) {
     }
   }
 
+  /** Persistance radar / barres : id canonique, ou à défaut le programme déjà chargé pour le prompt (évite zéro écriture si la résolution canonique a échoué). */
+  const guidedPersistProgrammeId =
+    isGuided ? (canonicalProgrammeIdForGuided ?? programmeForPrompt?.id ?? null) : null;
+
   const chapterThemes =
     programmeForPrompt?.chapters
       .map((c) => {
@@ -471,11 +475,11 @@ export async function POST(req: Request) {
         });
 
         let studelioProgressHint: string | null = null;
-        if (isGuided && canonicalProgrammeIdForGuided) {
+        if (isGuided && guidedPersistProgrammeId) {
           try {
             const out = await persistProgrammeGuidedProgressTurn({
               studentProfileId: sp.id,
-              programmeId: canonicalProgrammeIdForGuided,
+              programmeId: guidedPersistProgrammeId,
               assistantText,
             });
             studelioProgressHint = out.studelioProgressHint;

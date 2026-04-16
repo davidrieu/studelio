@@ -1,5 +1,6 @@
 import type { ChapterProgressStatus, Niveau } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { bootstrapGuidedProgressHistoryOnce } from "@/lib/bootstrap-guided-progress-history";
 import { ensureProgrammeStandardModules } from "@/lib/ensure-programme-standard-modules";
 import { findStudentChapterProgressRowsSafe } from "@/lib/load-student-chapter-progress-safe";
 import { loadStudentCompetencyScoresSafe } from "@/lib/load-student-competency-scores";
@@ -42,7 +43,8 @@ export type ProgrammeViewError = {
 
 /**
  * Données affichées sur la page Parcours (radar + modules) — même source que la persistance chat guidé.
- * Ne lance pas bootstrap historique (réservé au premier rendu SSR de la page).
+ * Rejoue une fois l’historique guidé (`bootstrapGuidedProgressHistoryOnce`, no-op si déjà fait) pour aligner
+ * radar / barres après sync ou ouverture API sans repasser par le SSR de la page.
  */
 export async function getStudentProgrammeViewData(userId: string): Promise<ProgrammeViewPayload | ProgrammeViewError> {
   let profile = await prisma.studentProfile.findUnique({
@@ -100,6 +102,15 @@ export async function getStudentProgrammeViewData(userId: string): Promise<Progr
       where: { programmeId: prog.id },
       orderBy: { order: "asc" },
     });
+    try {
+      await bootstrapGuidedProgressHistoryOnce({
+        studentProfileId: profile.id,
+        userId,
+        programmeId: prog.id,
+      });
+    } catch (e) {
+      console.error("[programme-view] bootstrap guided progress history", e);
+    }
   }
 
   const hasChapters = chapters.length > 0;

@@ -4,7 +4,6 @@ import { stripProgrammeGuidedMeta, type ParsedProgrammeGuidedMeta } from "@/lib/
 import { applyProgrammeGuidedSessionMeta } from "@/lib/apply-programme-guided-session-meta";
 import { MODULE_COMPLETION_UNITS } from "@/lib/programme-module-progress";
 
-const META_SNIPPET = "[[STUDELIO_META]]";
 const REPLAY_CAP = 400;
 
 function isGuidedMetaReplayed(errorProfile: unknown): boolean {
@@ -48,7 +47,7 @@ export async function bootstrapGuidedProgressHistoryOnce(input: {
   const withMeta = await prisma.chatMessage.findMany({
     where: {
       role: "ANDRE",
-      content: { contains: META_SNIPPET },
+      content: { contains: "STUDELIO", mode: "insensitive" },
       session: { userId, kind: "PROGRAMME_GUIDED" },
     },
     orderBy: { createdAt: "asc" },
