@@ -1,4 +1,5 @@
 import ReactMarkdown from "react-markdown";
+import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
 import { cn } from "@/lib/utils";
 
@@ -30,16 +31,17 @@ export function ChatMarkdown({ content, className }: Props) {
         "[&_td]:border [&_td]:border-[var(--studelio-border)] [&_td]:px-2 [&_td]:py-1.5 [&_td]:align-top",
         "[&_tr:nth-child(even)]:bg-muted/20",
         "[&_code]:rounded [&_code]:bg-muted/80 [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[0.85em]",
-        "[&_pre]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:bg-muted/50 [&_pre]:p-3",
+        "[&_pre]:my-2 [&_pre]:overflow-x-auto [&_pre]:whitespace-pre-wrap [&_pre]:rounded-lg [&_pre]:bg-muted/50 [&_pre]:p-3",
         "[&_pre_code]:bg-transparent [&_pre_code]:p-0",
-        "[&_blockquote]:border-l-2 [&_blockquote]:border-[var(--studelio-blue)]/40 [&_blockquote]:pl-3 [&_blockquote]:italic",
+        "[&_blockquote]:border-l-2 [&_blockquote]:border-[var(--studelio-blue)]/40 [&_blockquote]:pl-3 [&_blockquote]:italic [&_blockquote]:whitespace-pre-wrap",
+        "[&_br]:content-[''] [&_br]:my-1.5 [&_br]:block",
         "[&_hr]:my-4 [&_hr]:border-[var(--studelio-border)]",
         "[&_a]:text-[var(--studelio-blue)] [&_a]:underline",
         className,
       )}
     >
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={[remarkGfm, remarkBreaks]}
         components={{
           p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
         }}

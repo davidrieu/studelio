@@ -23,7 +23,7 @@ const MAX_USER_CHARS = 12_000;
 const MAX_HISTORY_MESSAGES = 36;
 
 /** Déclencheur interne : l’élève n’a rien écrit ; André ouvre la séance. */
-const PROGRAMME_GUIDED_BOOTSTRAP_USER = `[Ouverture de séance « Programme guidé ». L’élève vient d’entrer dans l’interface immersive : il n’a pas encore écrit. Accueille-le brièvement (ton cool et rassurant), expose en 2–4 phrases le plan de travail que tu vas mener (en t’appuyant sur le programme et son profil), puis propose immédiatement le premier exercice concret avec une seule consigne claire — sans lui demander de choisir un thème ni un chapitre.]`;
+const PROGRAMME_GUIDED_BOOTSTRAP_USER = `[Ouverture de séance « Programme guidé ». L’élève vient d’entrer dans l’interface immersive : il n’a pas encore écrit. Accueille-le brièvement (ton cool et rassurant), expose en 2–4 phrases le plan de travail que tu vas mener (en t’appuyant sur le programme et son profil), pose une question courte sur ce qu’il travaille en ce moment en cours de français (priorité du moment), puis propose immédiatement le premier exercice concret avec une seule consigne claire — en collant dans ce message tout extrait de texte nécessaire (blockquote ou bloc texte) pour qu’il n’ait pas à scroller plus tard.]`;
 
 const DICTEE_BOOTSTRAP_USER = `[Ouverture dictée Studelio. L’élève a l’audio sur la page (lecteur, vitesse réglable). Il n’a pas encore envoyé son texte. Accueille-le brièvement, rappelle la consigne : il doit **écrire sa dictée directement dans le grand champ de texte sous la conversation** (zone prévue dans l’app), pas sur papier ni dans un autre document. Quand il a fini, il envoie avec le bouton. **Ne lui propose pas** d’envoyer une photo, une image ou un fichier : ce n’est pas possible dans l’app pour l’instant. Ne donne pas le texte officiel. Sois rassurant.]`;
 
@@ -297,6 +297,29 @@ export async function POST(req: Request) {
           .join("\n\n")
       : null;
 
+  let recentProgrammeGuidedDigest: string | null = null;
+  if (isGuided) {
+    const guidedPastRows = await prisma.chatMessage.findMany({
+      where: {
+        role: "ANDRE",
+        session: { userId: session.user.id, kind: "PROGRAMME_GUIDED" },
+        NOT: { sessionId: chatSessionId! },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+      select: { content: true },
+    });
+    if (guidedPastRows.length > 0) {
+      recentProgrammeGuidedDigest = guidedPastRows
+        .reverse()
+        .map(
+          (r, i) =>
+            `---\n### Séance programme guidée antérieure — extrait ${i + 1}\n${r.content.slice(0, 1400)}`,
+        )
+        .join("\n\n");
+    }
+  }
+
   if (isDictee && !dicteeContext) {
     return NextResponse.json({ error: "Contexte dictée manquant." }, { status: 500 });
   }
@@ -321,6 +344,7 @@ export async function POST(req: Request) {
           programme: programmeCtx,
           chapterProgressSummary,
           recentFreeChatDigest: recentDigest,
+          recentProgrammeGuidedDigest,
           historyTruncatedEarly,
           visibleMessageCount: historyRows.length,
         })
