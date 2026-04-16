@@ -437,11 +437,13 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
 
         {progressHint ? (
           <div
-            className="flex items-start gap-3 border-t border-emerald-500/25 bg-emerald-500/[0.08] px-4 py-3 sm:px-8"
+            className="flex items-start gap-3 border-t border-emerald-500/40 bg-emerald-500/15 px-4 py-3 sm:px-8 dark:bg-emerald-950/45"
             role="status"
           >
-            <TrendingUp className="mt-0.5 size-4 shrink-0 text-emerald-700 dark:text-emerald-400" aria-hidden />
-            <p className="min-w-0 flex-1 text-sm leading-snug text-[var(--studelio-text-body)]">{progressHint}</p>
+            <TrendingUp className="mt-0.5 size-4 shrink-0 text-emerald-700 dark:text-emerald-300" aria-hidden />
+            <p className="min-w-0 flex-1 text-sm font-medium leading-snug text-emerald-950 dark:text-emerald-50">
+              {progressHint}
+            </p>
             <Button
               type="button"
               variant="ghost"

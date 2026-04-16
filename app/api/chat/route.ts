@@ -475,17 +475,24 @@ export async function POST(req: Request) {
         });
 
         let studelioProgressHint: string | null = null;
-        if (isGuided && guidedPersistProgrammeId) {
-          try {
-            const out = await persistProgrammeGuidedProgressTurn({
-              studentProfileId: sp.id,
-              programmeId: guidedPersistProgrammeId,
-              assistantText,
-            });
-            studelioProgressHint = out.studelioProgressHint;
-            revalidateProgrammeProgressViews();
-          } catch (e) {
-            console.error("[chat] programme guided progress", e);
+        if (isGuided) {
+          if (!guidedPersistProgrammeId) {
+            studelioProgressHint =
+              "Parcours : aucun programme n’est relié à ton niveau en base — la progression ne peut pas s’enregistrer. Vérifie avec un admin que le programme existe pour ta classe.";
+          } else {
+            try {
+              const out = await persistProgrammeGuidedProgressTurn({
+                studentProfileId: sp.id,
+                programmeId: guidedPersistProgrammeId,
+                assistantText,
+              });
+              studelioProgressHint = out.studelioProgressHint;
+              revalidateProgrammeProgressViews();
+            } catch (e) {
+              console.error("[chat] programme guided progress", e);
+              studelioProgressHint =
+                "Parcours : la mise à jour n’a pas pu s’enregistrer (erreur serveur). Réessaie dans un instant ou ouvre « Parcours » et clique « Recharger les scores ».";
+            }
           }
         }
 

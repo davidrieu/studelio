@@ -179,6 +179,6 @@ Schéma JSON :
 \`[[STUDELIO_META]]\` puis ligne suivante :
 \`{"skills":["Grammaire","Lecture"],"chapters":[1]}\`
 
-**Important** : ce JSON (et non le texte libre du dessus) est ce qui **met à jour** le radar et les barres modules dans l’app. Sans objet \`{...}\` valide après le marqueur, la progression reste figée.
+**Important** : le JSON est la **source principale** du radar et des barres. Un paragraphe « Studelio crédite… » peut être lu en secours, mais **termine toujours** par \`[[STUDELIO_META]]\` + objet \`{...}\` valide pour une synchro fiable à chaque message.
 `;
 }

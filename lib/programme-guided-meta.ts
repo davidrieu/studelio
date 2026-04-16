@@ -157,7 +157,7 @@ function inferSkillsFromChapterOrders(
 }
 
 /** Si le JSON ne liste pas `chapters` mais des `skills`, alignement sur les 6 modules Studelio (ordre 1–6). */
-function inferChapterOrdersFromSkills(skills: readonly CompetencyRadarLabel[]): number[] {
+export function inferChapterOrdersFromSkills(skills: readonly CompetencyRadarLabel[]): number[] {
   const seen = new Set<number>();
   const out: number[] = [];
   for (const lab of skills) {
