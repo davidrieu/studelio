@@ -23,7 +23,8 @@ export const niveauLabel: Record<Niveau, string> = {
   QUATRIEME: "4e",
   TROISIEME: "3e",
   SECONDE: "2nde",
-  PREMIERE: "1re",
+  PREMIERE_GENERALE: "1re générale",
+  PREMIERE_TECHNOLOGIQUE: "1re technologique",
   TERMINALE: "Terminale",
   BTS: "BTS",
 };

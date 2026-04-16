@@ -60,9 +60,15 @@ export const programmeSeeds: ProgrammeSeed[] = [
     chapters: STUDELIO_STANDARD_MODULES,
   },
   {
-    niveau: "PREMIERE",
-    title: "Français — 1re",
-    description: "Objets d’étude et méthodes du bac de français.",
+    niveau: "PREMIERE_GENERALE",
+    title: "Français — 1re générale",
+    description: "Objets d’étude et méthodes du bac de français (voie générale).",
+    chapters: STUDELIO_STANDARD_MODULES,
+  },
+  {
+    niveau: "PREMIERE_TECHNOLOGIQUE",
+    title: "Français — 1re technologique",
+    description: "Français en série technologique : consolidation, méthodes et préparation aux épreuves.",
     chapters: STUDELIO_STANDARD_MODULES,
   },
   {

@@ -11,7 +11,7 @@
 | `quatrieme/`| 4e            |
 | `troisieme/`| 3e            |
 | `seconde/`  | 2nde          |
-| `premiere/` | 1re           |
+| `premiere/` | 1re générale **et** 1re technologique (même dossier tant que tu ne scindes pas le contenu) |
 | `terminale/`| Terminale     |
 | `bts/`      | BTS           |
 

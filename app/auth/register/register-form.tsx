@@ -15,7 +15,8 @@ const niveaux = [
   { value: "QUATRIEME", label: "4e" },
   { value: "TROISIEME", label: "3e" },
   { value: "SECONDE", label: "2nde" },
-  { value: "PREMIERE", label: "1re" },
+  { value: "PREMIERE_GENERALE", label: "1re générale" },
+  { value: "PREMIERE_TECHNOLOGIQUE", label: "1re technologique" },
   { value: "TERMINALE", label: "Terminale" },
   { value: "BTS", label: "BTS" },
 ] as const;

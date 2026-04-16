@@ -9,7 +9,13 @@ export const niveauxBrevetBlanc: readonly Niveau[] = [
 ] as const;
 
 /** Niveaux lycée / BTS : épreuves « bac blanc ». */
-export const niveauxBacBlanc: readonly Niveau[] = ["SECONDE", "PREMIERE", "TERMINALE", "BTS"] as const;
+export const niveauxBacBlanc: readonly Niveau[] = [
+  "SECONDE",
+  "PREMIERE_GENERALE",
+  "PREMIERE_TECHNOLOGIQUE",
+  "TERMINALE",
+  "BTS",
+] as const;
 
 export function blancKindForNiveau(niveau: Niveau): BlancKind {
   return niveauxBrevetBlanc.includes(niveau) ? "BREVET_BLANC" : "BAC_BLANC";

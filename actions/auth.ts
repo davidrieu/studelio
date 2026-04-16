@@ -11,7 +11,8 @@ const niveaux = [
   "QUATRIEME",
   "TROISIEME",
   "SECONDE",
-  "PREMIERE",
+  "PREMIERE_GENERALE",
+  "PREMIERE_TECHNOLOGIQUE",
   "TERMINALE",
   "BTS",
 ] as const;
