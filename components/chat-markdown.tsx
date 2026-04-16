@@ -33,8 +33,6 @@ export function ChatMarkdown({ content, className }: Props) {
         "[&_code]:rounded [&_code]:bg-muted/80 [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[0.85em]",
         "[&_pre]:my-2 [&_pre]:overflow-x-auto [&_pre]:whitespace-pre-wrap [&_pre]:rounded-lg [&_pre]:bg-muted/50 [&_pre]:p-3",
         "[&_pre_code]:bg-transparent [&_pre_code]:p-0",
-        "[&_blockquote]:border-l-2 [&_blockquote]:border-[var(--studelio-blue)]/40 [&_blockquote]:pl-3 [&_blockquote]:italic [&_blockquote]:whitespace-pre-wrap",
-        "[&_br]:content-[''] [&_br]:my-1.5 [&_br]:block",
         "[&_hr]:my-4 [&_hr]:border-[var(--studelio-border)]",
         "[&_a]:text-[var(--studelio-blue)] [&_a]:underline",
         className,
@@ -44,6 +42,11 @@ export function ChatMarkdown({ content, className }: Props) {
         remarkPlugins={[remarkGfm, remarkBreaks]}
         components={{
           p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
+          blockquote: ({ children }) => (
+            <blockquote className="my-2 border-l-2 border-[var(--studelio-blue)]/40 pl-3 italic leading-snug whitespace-pre-wrap [&>p]:!mb-1 [&>p:last-child]:!mb-0 [&>p]:leading-snug">
+              {children}
+            </blockquote>
+          ),
         }}
       >
         {content}

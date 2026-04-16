@@ -17,6 +17,11 @@ export type ProgrammeSeanceContextBanner = {
 
 const STORAGE_KEY = "studelio.programmeGuidedSessionId";
 
+/** Messages courts reconnus par André (prompt programme guidé) quand l’élève utilise les raccourcis UI. */
+const PRESET_EXERCISE = "Je fais l’exercice proposé.";
+const PRESET_CLASS =
+  "Je préfère qu’on s’appuie d’abord sur ce qu’on fait en ce moment en cours de français avant de continuer.";
+
 type MsgRole = "USER" | "ANDRE";
 
 type ChatMessageRow = {
@@ -105,6 +110,12 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
   const startedRef = useRef(false);
 
   const userHasReplied = useMemo(() => messages.some((m) => m.role === "USER"), [messages]);
+
+  const showProgrammeChoices = useMemo(() => {
+    if (!sessionId || bootstrapping || loadingMessages || sending || streamText) return false;
+    const last = messages[messages.length - 1];
+    return last?.role === "ANDRE";
+  }, [sessionId, bootstrapping, loadingMessages, sending, streamText, messages]);
 
   const scrollDown = useCallback(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -209,9 +220,9 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
     scrollDown();
   }, [messages, streamText, scrollDown]);
 
-  async function send() {
-    const text = input.trim();
-    if (!text || sending || !sessionId) return;
+  async function sendMessage(text: string) {
+    const trimmed = text.trim();
+    if (!trimmed || sending || !sessionId) return;
     setInput("");
     setError(null);
     setSending(true);
@@ -220,7 +231,7 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
     const userMsg: ChatMessageRow = {
       id: `local-${Date.now()}`,
       role: "USER",
-      content: text,
+      content: trimmed,
       createdAt: new Date().toISOString(),
     };
     setMessages((prev) => [...prev, userMsg]);
@@ -230,7 +241,7 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: "programme_guided", sessionId, message: text }),
+        body: JSON.stringify({ mode: "programme_guided", sessionId, message: trimmed }),
       });
 
       if (res.status === 503) {
@@ -268,6 +279,12 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
     }
   }
 
+  async function send() {
+    const text = input.trim();
+    if (!text) return;
+    await sendMessage(text);
+  }
+
   function newSession() {
     sessionStorage.removeItem(STORAGE_KEY);
     setSessionId(null);
@@ -285,8 +302,7 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
           <div className="min-w-0 flex-1">
             <p className="font-display text-lg font-semibold text-[var(--studelio-text)]">Séance programme</p>
             <p className="text-xs text-muted-foreground">
-              André mène : plan, exercices et difficulté s’adaptent à toi. Réponds aux consignes — tu ne choisis pas le
-              thème.
+              André mène la séance ; en dessous de chaque message d’André tu peux choisir un raccourci ou écrire librement.
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-1">
@@ -392,12 +408,42 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
           </div>
         ) : null}
 
+        {showProgrammeChoices ? (
+          <div
+            className="border-t border-[var(--studelio-border)] bg-[var(--studelio-blue-dim)]/25 px-4 py-3 sm:px-8"
+            role="group"
+            aria-label="Raccourcis de réponse"
+          >
+            <p className="mb-2 text-xs font-medium text-[var(--studelio-text)]">Que veux-tu faire ?</p>
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+              <Button
+                type="button"
+                variant="default"
+                className="h-auto min-h-10 w-full justify-center rounded-xl px-4 py-2.5 text-left text-sm font-medium sm:w-auto sm:min-w-[12rem]"
+                disabled={sending || bootstrapping || !sessionId}
+                onClick={() => void sendMessage(PRESET_EXERCISE)}
+              >
+                Faire l’exercice proposé
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-auto min-h-10 w-full justify-center rounded-xl border-[var(--studelio-blue)]/40 bg-card px-4 py-2.5 text-left text-sm font-medium text-[var(--studelio-text)] sm:w-auto sm:min-w-[12rem]"
+                disabled={sending || bootstrapping || !sessionId}
+                onClick={() => void sendMessage(PRESET_CLASS)}
+              >
+                Parler de ce qu’on fait en cours
+              </Button>
+            </div>
+          </div>
+        ) : null}
+
         <div className="border-t border-[var(--studelio-border)] bg-card/80 px-4 py-4 backdrop-blur sm:px-8">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Réponds à l’exercice d’André (pas besoin de choisir un thème)…"
+              placeholder="Réponds librement à André, ou utilise les deux boutons au-dessus…"
               rows={3}
               disabled={sending || bootstrapping || !sessionId}
               className={cn(
