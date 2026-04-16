@@ -1,0 +1,15 @@
+Programme de français — Première générale (voie générale)
+
+Ce dossier alimente André pour les élèves en **1re générale**. Il est **distinct** de la 1re technologique : ne mélange pas les attendus, les types de textes ni les rythmes de travail.
+
+Cadre général
+- Préparation au **bac de français** (écrit + oral) : compréhension et interprétation, argumentation, maîtrise de la langue.
+- Travail sur **textes littéraires et documents variés** (articles, essais, corpus comparés).
+- Progression sur **grammaire, orthographe, lexique, styles**, et **expression écrite** structurée (paragraphes, plans, transitions).
+
+Priorités pour les séances Studelio
+- Ancrer les exercices dans les **objets d’étude** et les **notions** du programme de 1re générale (lecture analytique, dissertation, question à traiter, oral).
+- Faire produire l’élève : reformulations, analyses courtes, plans, introductions, paragraphes argumentés — pas de copie clé en main.
+- Relier régulièrement au **cours qu’il suit en classe** (chapitre en cours, méthode vue avec son professeur).
+
+Tu peux compléter ce dossier avec des fichiers contenant **corpus** ou **module** dans le nom (voir règles ci-dessous dans le README du dossier `programmes`).

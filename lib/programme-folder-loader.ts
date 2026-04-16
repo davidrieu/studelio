@@ -9,9 +9,8 @@ export const NIVEAU_TO_PROGRAMME_DIR: Record<Niveau, string> = {
   QUATRIEME: "quatrieme",
   TROISIEME: "troisieme",
   SECONDE: "seconde",
-  /** Même corpus `premiere/` tant que des dossiers dédiés n’existent pas. */
-  PREMIERE_GENERALE: "premiere",
-  PREMIERE_TECHNOLOGIQUE: "premiere",
+  PREMIERE_GENERALE: "premiere_generale",
+  PREMIERE_TECHNOLOGIQUE: "premiere_technologique",
   TERMINALE: "terminale",
   BTS: "bts",
 };

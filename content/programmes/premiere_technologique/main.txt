@@ -1,0 +1,15 @@
+Programme de français — Première technologique (séries technologiques)
+
+Ce dossier alimente André pour les élèves en **1re technologique**. Il est **distinct** de la 1re générale : les supports, le lexique et les formats (synthèse, dossier, oral pro) doivent rester **cohérents avec une voie techno**.
+
+Cadre général
+- Français au service de la **compréhension** et de la **production** de documents (textes, infographies, consignes professionnelles, synthèses).
+- Renforcer la **clarté**, la **précision du vocabulaire**, la **syntaxe** et les **transitions** dans des formats utiles en série techno (compte rendu, synthèse courte, argumentaire simple, préparation d’oral).
+- Lire et analyser des **documents variés** (presse spécialisée, notices, courriers, extraits littéraires courts) sans exiger le même périmètre qu’en voie générale.
+
+Priorités pour les séances Studelio
+- Proposer des **situations concrètes** (études de cas courtes, reformulation de consignes, correction de formulations « pro »).
+- Encourager l’**autonomie** : check-lists, plans très visibles, micro-objectifs.
+- Relier au **cours de français en classe** et, quand c’est pertinent, aux **matières de spécialité** (vocabulaire transposable, consignes type bac techno — sans devancer le programme du prof).
+
+Tu peux compléter ce dossier avec des fichiers contenant **corpus** ou **module** dans le nom (voir règles dans le README du dossier `programmes`).
