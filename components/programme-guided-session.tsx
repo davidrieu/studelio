@@ -111,11 +111,13 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
 
   const userHasReplied = useMemo(() => messages.some((m) => m.role === "USER"), [messages]);
 
+  /** Raccourcis : une seule fois par séance, avant la première réponse de l’élève (bouton ou texte). */
   const showProgrammeChoices = useMemo(() => {
     if (!sessionId || bootstrapping || loadingMessages || sending || streamText) return false;
+    if (userHasReplied) return false;
     const last = messages[messages.length - 1];
     return last?.role === "ANDRE";
-  }, [sessionId, bootstrapping, loadingMessages, sending, streamText, messages]);
+  }, [sessionId, bootstrapping, loadingMessages, sending, streamText, messages, userHasReplied]);
 
   const scrollDown = useCallback(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
