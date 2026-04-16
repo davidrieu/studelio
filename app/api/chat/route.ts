@@ -479,7 +479,7 @@ export async function POST(req: Request) {
 
         let studelioProgressHint: string | null = null;
         let studelioProgressDelta: StudelioProgressDeltaPayload | null = null;
-        if (isGuided) {
+        if (isGuided && !isBootstrap) {
           if (!guidedPersistProgrammeId) {
             studelioProgressHint =
               "Parcours : aucun programme n’est relié à ton niveau en base — la progression ne peut pas s’enregistrer. Vérifie avec un admin que le programme existe pour ta classe.";

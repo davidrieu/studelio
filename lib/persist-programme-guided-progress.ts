@@ -1,24 +1,19 @@
 import { revalidatePath } from "next/cache";
 import { applyProgrammeGuidedSessionMeta } from "@/lib/apply-programme-guided-session-meta";
-import { bumpProgrammeGuidedMicroProgress } from "@/lib/bump-programme-guided-micro-progress";
 import { ensureProgrammeStandardModules } from "@/lib/ensure-programme-standard-modules";
 import { inferProgrammeProgressProseFallback } from "@/lib/infer-programme-progress-prose";
 import { stripProgrammeGuidedMeta } from "@/lib/programme-guided-meta";
-import {
-  buildStudelioProgressDeltaFromMeta,
-  buildStudelioProgressDeltaMicro,
-  type StudelioProgressDeltaPayload,
-} from "@/lib/studelio-progress-delta";
-import { studelioProgressHintMeta, studelioProgressHintMicro } from "@/lib/studelio-progress-user-hint";
+import { buildStudelioProgressDeltaFromMeta, type StudelioProgressDeltaPayload } from "@/lib/studelio-progress-delta";
+import { studelioProgressHintMeta, studelioProgressHintNoPoints } from "@/lib/studelio-progress-user-hint";
 
 export type PersistProgrammeGuidedProgressResult = {
   studelioProgressHint: string | null;
-  studelioProgressDelta: StudelioProgressDeltaPayload;
+  studelioProgressDelta: StudelioProgressDeltaPayload | null;
 };
 
 /**
- * Après une réponse André en séance programme : aligne les modules en base, applique META ou micro-bump,
- * retourne le texte court et le détail des points pour l’UI (badges + total session).
+ * Après une réponse André : META + `outcome`, ou secours prose très modeste ; sinon message neutre.
+ * L’API n’appelle pas cette fonction sur le message d’ouverture (bootstrap sans message élève).
  */
 export async function persistProgrammeGuidedProgressTurn(input: {
   studentProfileId: string;
@@ -50,15 +45,14 @@ export async function persistProgrammeGuidedProgressTurn(input: {
       meta: proseMeta,
     });
     return {
-      studelioProgressHint: `${studelioProgressHintMeta(proseMeta)} — pris en compte depuis le résumé Studelio en fin de message.`,
+      studelioProgressHint: `${studelioProgressHintMeta(proseMeta)} — secours texte (mini +).`,
       studelioProgressDelta: buildStudelioProgressDeltaFromMeta(proseMeta, "prose"),
     };
   }
 
-  await bumpProgrammeGuidedMicroProgress({ studentProfileId, programmeId });
   return {
-    studelioProgressHint: studelioProgressHintMicro(),
-    studelioProgressDelta: buildStudelioProgressDeltaMicro(),
+    studelioProgressHint: studelioProgressHintNoPoints(),
+    studelioProgressDelta: null,
   };
 }
 

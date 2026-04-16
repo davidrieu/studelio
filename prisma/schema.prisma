@@ -168,12 +168,12 @@ model StudentCompetencyProgress {
   id                 String         @id @default(cuid())
   studentProfileId   String         @unique
   studentProfile     StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
-  grammaire          Int            @default(0)
-  orthographe        Int            @default(0)
-  conjugaison        Int            @default(0)
-  vocabulaire        Int            @default(0)
-  expressionEcrite   Int            @default(0)
-  lecture            Int            @default(0)
+  grammaire          Float          @default(0)
+  orthographe        Float          @default(0)
+  conjugaison        Float          @default(0)
+  vocabulaire        Float          @default(0)
+  expressionEcrite   Float          @default(0)
+  lecture            Float          @default(0)
   updatedAt          DateTime       @updatedAt
 }
 
@@ -322,8 +322,8 @@ model StudentChapterProgress {
   chapterId        String
   chapter          ProgrammeChapter      @relation(fields: [chapterId], references: [id], onDelete: Cascade)
   status           ChapterProgressStatus @default(NOT_STARTED)
-  /// Incrémenté à chaque META séance programme qui cite ce module (passage auto en cours / terminé).
-  programmeMetaHits Int                  @default(0)
+  /// Incrémenté à chaque META séance programme qui cite ce module (passage auto en cours / terminé). Décimal pour micro-points.
+  programmeMetaHits Float                @default(0)
   updatedAt        DateTime              @updatedAt
 
   @@unique([studentProfileId, chapterId])

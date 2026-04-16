@@ -1,27 +1,30 @@
-import type { ParsedProgrammeGuidedMeta } from "@/lib/programme-guided-meta";
-import {
-  MODULE_META_BUMP_PER_CHAPTER,
-  MODULE_MICRO_BUMP_PER_EXCHANGE,
-  RADAR_META_SKILL_DELTA,
-  RADAR_MICRO_PER_AXIS_EXCHANGE,
-} from "@/lib/programme-module-progress";
+import { inferChapterOrdersFromSkills, type ParsedProgrammeGuidedMeta } from "@/lib/programme-guided-meta";
+import { metaModulePointsPerChapter, metaRadarPointsPerSkill } from "@/lib/programme-module-progress";
 
-/** Texte court affiché à l’élève après la réponse (cohérent avec les constantes serveur). */
-export function studelioProgressHintMicro(): string {
-  return `Parcours Studelio : +${RADAR_MICRO_PER_AXIS_EXCHANGE} pts sur chaque axe du radar ; +${MODULE_MICRO_BUMP_PER_EXCHANGE} % sur la barre du module suivi. Ouvre « Parcours & progression » pour voir les barres.`;
+export function studelioProgressHintNoPoints(): string {
+  return "Parcours : aucun point sans bloc [[STUDELIO_META]] + JSON (avec le résultat `outcome`). Demande à André de compléter la fin du message.";
 }
 
 export function studelioProgressHintMeta(meta: ParsedProgrammeGuidedMeta): string {
-  if (meta.skills.length === 0 && meta.chapterOrders.length === 0) {
-    return "Parcours Studelio : enregistrement pris en compte — ouvre « Parcours & progression » pour le détail.";
+  const o = meta.outcome;
+  const r = metaRadarPointsPerSkill(o);
+  const m = metaModulePointsPerChapter(o);
+  if (r <= 0 && m <= 0) {
+    return "Parcours Studelio : pas de points sur ce message (réponse à retravailler). Continue comme ça, la prochaine sera la bonne.";
   }
   const radar =
-    meta.skills.length > 0
-      ? `radar +${RADAR_META_SKILL_DELTA} pts sur : ${meta.skills.join(", ")}`
-      : "radar inchangé (aucune compétence listée)";
-  const bars =
+    meta.skills.length > 0 && r > 0
+      ? `radar +${r} par compétence : ${meta.skills.join(", ")}`
+      : "radar inchangé";
+  const orders =
     meta.chapterOrders.length > 0
-      ? `barres modules +${MODULE_META_BUMP_PER_CHAPTER} % sur les n° ${meta.chapterOrders.join(", ")}`
-      : "barres modules inchangées (aucun module listé)";
-  return `Parcours Studelio — ${radar} ; ${bars}.`;
+      ? meta.chapterOrders
+      : meta.skills.length > 0
+        ? inferChapterOrdersFromSkills(meta.skills)
+        : [];
+  const bars =
+    orders.length > 0 && m > 0
+      ? `barres modules +${m} par module n° ${orders.join(", ")}`
+      : "barres modules inchangées";
+  return `Parcours Studelio (${o}) — ${radar} ; ${bars}.`;
 }

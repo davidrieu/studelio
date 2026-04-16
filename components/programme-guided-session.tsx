@@ -124,22 +124,29 @@ type SessionProps = {
   contextBanner: ProgrammeSeanceContextBanner;
 };
 
+function formatDeltaNumber(n: number): string {
+  if (!Number.isFinite(n)) return "0";
+  const r = Math.round(n * 100) / 100;
+  return Number.isInteger(r) ? String(r) : r.toFixed(2).replace(/\.?0+$/, "");
+}
+
 function formatDeltaChips(d: StudelioProgressDeltaPayload): string {
   const parts: string[] = [];
   (Object.keys(RADAR_SHORT) as (keyof CompetencyScores)[]).forEach((k) => {
     const v = d.radarDelta[k];
-    if (v && v > 0) parts.push(`+${Math.round(v)} ${RADAR_SHORT[k]}`);
+    if (v && v > 0) parts.push(`+${formatDeltaNumber(v)} ${RADAR_SHORT[k]}`);
   });
   for (const m of d.moduleDeltas) {
     if (!m.units || m.units <= 0) continue;
-    parts.push(m.order === 0 ? `+${m.units} barre` : `+${m.units} M${m.order}`);
+    parts.push(
+      m.order === 0 ? `+${formatDeltaNumber(m.units)} barre` : `+${formatDeltaNumber(m.units)} M${m.order}`,
+    );
   }
   const s = parts.join(" · ");
   return s.length > 52 ? `${s.slice(0, 49)}…` : s;
 }
 
 function deltaKindLabel(kind: StudelioProgressDeltaPayload["kind"]): string {
-  if (kind === "micro") return "Auto";
   if (kind === "prose") return "Texte";
   return "META";
 }
@@ -183,7 +190,7 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
   const [loadingMessages, setLoadingMessages] = useState(false);
   /** Points Parcours affichés à côté du message André correspondant (id message serveur). */
   const [deltasByMessageId, setDeltasByMessageId] = useState<Record<string, StudelioProgressDeltaPayload>>({});
-  /** Somme des `displayPoints` pour cette séance (mémoire locale). */
+  /** Somme des `displayPoints` pour cette séance (mémoire locale, décimales conservées). */
   const [sessionParcoursPoints, setSessionParcoursPoints] = useState(0);
   const bottomRef = useRef<HTMLDivElement>(null);
   const startedRef = useRef(false);
@@ -278,7 +285,9 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
         const { lastAndreId } = await loadMessages(newId);
         if (lastAndreId && studelioProgressDelta && studelioProgressDelta.displayPoints > 0) {
           setDeltasByMessageId((prev) => ({ ...prev, [lastAndreId]: studelioProgressDelta }));
-          setSessionParcoursPoints((p) => p + Math.round(studelioProgressDelta.displayPoints));
+          setSessionParcoursPoints(
+            (p) => Math.round((p + studelioProgressDelta.displayPoints) * 100) / 100,
+          );
         }
       }
       if (!streamError && (receivedDone || assistant.trim().length > 0)) {
@@ -375,7 +384,9 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
       const { lastAndreId } = await loadMessages(sessionId);
       if (lastAndreId && studelioProgressDelta && studelioProgressDelta.displayPoints > 0) {
         setDeltasByMessageId((prev) => ({ ...prev, [lastAndreId]: studelioProgressDelta }));
-        setSessionParcoursPoints((p) => p + Math.round(studelioProgressDelta.displayPoints));
+        setSessionParcoursPoints(
+          (p) => Math.round((p + studelioProgressDelta.displayPoints) * 100) / 100,
+        );
       }
       if (!streamError && (receivedDone || assistant.trim().length > 0)) {
         emitProgrammeProgressUpdated();
@@ -425,7 +436,7 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
               >
                 <Sparkles className="size-3.5 shrink-0 opacity-90" aria-hidden />
                 <span className="min-w-0 truncate">
-                  Cette séance · +{sessionParcoursPoints} pts Parcours (cumul)
+                  Cette séance · +{formatDeltaNumber(sessionParcoursPoints)} pts Parcours (cumul)
                 </span>
               </p>
             ) : null}
@@ -526,10 +537,10 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       transition={{ type: "spring", stiffness: 420, damping: 24 }}
                       className="w-[5.25rem] shrink-0 rounded-2xl border border-emerald-500/35 bg-gradient-to-b from-emerald-500/15 to-emerald-600/5 px-2 py-2 text-center shadow-sm dark:from-emerald-950/50 dark:to-emerald-950/20"
-                      aria-label={`Parcours : plus ${Math.round(delta.displayPoints)} points`}
+                      aria-label={`Parcours : plus ${formatDeltaNumber(delta.displayPoints)} points`}
                     >
                       <span className="font-display text-lg font-bold tabular-nums text-emerald-700 dark:text-emerald-300">
-                        +{Math.round(delta.displayPoints)}
+                        +{formatDeltaNumber(delta.displayPoints)}
                       </span>
                       <span className="mt-0.5 block text-[9px] font-semibold uppercase tracking-wide text-emerald-800/90 dark:text-emerald-200/90">
                         Parcours

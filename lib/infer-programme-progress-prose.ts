@@ -9,12 +9,17 @@ import { STUDELIO_STANDARD_MODULES_DEF } from "@/lib/studelio-standard-modules";
 
 const MAX_MODULE = STUDELIO_STANDARD_MODULES_DEF.reduce((m, d) => Math.max(m, d.order), 0);
 
+const FAIL_TAIL =
+  /\b(pas (tout )?à fait|pas encore|incorrect|dommage|essa(y|i)e encore|ce n'est pas|ce n’est pas|faux|erreur|incomplet|insuffisant|raté|échou|echou|non,|tu te trompes)\b/i;
+
 /**
- * Quand le modèle oublie le JSON META mais annonce tout de même un gain « Studelio » en fin de message,
- * on déduit compétences + modules pour aligner la base sur ce qu’affiche l’élève.
+ * Secours minimal si le JSON META manque mais qu’André annonce un crédit Studelio **sans** signal d’échec dans le même passage.
+ * Toujours traité comme **weak** (0.1 pt) côté serveur — préfère le JSON avec \`outcome\`.
  */
 export function inferProgrammeProgressProseFallback(assistantText: string): ParsedProgrammeGuidedMeta | null {
   const tail = assistantText.slice(-1400);
+
+  if (FAIL_TAIL.test(tail)) return null;
 
   const triggered =
     /\bstudelio\b[\s\S]{0,160}\b(cr[eé]dit|credits?|credit|coche|enregistr|attribu|avance|points?|bonus)\b/i.test(
@@ -86,5 +91,5 @@ export function inferProgrammeProgressProseFallback(assistantText: string): Pars
 
   if (outSkills.length === 0 && outChapters.length === 0) return null;
 
-  return { skills: outSkills, chapterOrders: outChapters };
+  return { skills: outSkills, chapterOrders: outChapters, outcome: "weak" };
 }

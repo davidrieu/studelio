@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { ProgrammeMetaOutcome } from "@/lib/programme-module-progress";
 import { STUDELIO_STANDARD_MODULES_DEF } from "@/lib/studelio-standard-modules";
 
 /** Marqueur en fin de message André (séance programme) — retiré avant affichage / stockage. */
@@ -34,14 +35,18 @@ export type CompetencyScores = {
   lecture: number;
 };
 
+const metaOutcomeEnum = z.enum(["fail", "weak", "ok", "good", "excellent"]);
+
 const metaSchema = z.object({
   skills: z.array(z.string()).max(6).optional().default([]),
   chapters: z.array(z.coerce.number().int().positive()).max(8).optional().default([]),
+  outcome: metaOutcomeEnum,
 });
 
 export type ParsedProgrammeGuidedMeta = {
   skills: CompetencyRadarLabel[];
   chapterOrders: number[];
+  outcome: ProgrammeMetaOutcome;
 };
 
 function fold(s: string): string {
@@ -232,7 +237,7 @@ export function stripProgrammeGuidedMeta(raw: string): { content: string; meta: 
     if (skills.length === 0 && chapterOrders.length === 0) {
       return { content: content.trim(), meta: null };
     }
-    return { content: content.trim(), meta: { skills, chapterOrders } };
+    return { content: content.trim(), meta: { skills, chapterOrders, outcome: parsed.data.outcome } };
   } catch {
     return { content: content.trim(), meta: null };
   }

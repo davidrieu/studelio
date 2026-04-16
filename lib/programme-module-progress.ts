@@ -1,26 +1,41 @@
 import type { ChapterProgressStatus } from "@prisma/client";
 
 /**
- * Unités affichées comme % de barre (0–99 en cours, 100 = module terminé).
- * Chaque échange sans META ajoute `MODULE_MICRO_BUMP_PER_EXCHANGE` ; le META ajoute
- * `MODULE_META_BUMP_PER_CHAPTER` par module cité.
+ * Unités barre module (0–100). Les gains META s’ajoutent en décimal pour rester modestes sur plusieurs mois.
  */
 export const MODULE_COMPLETION_UNITS = 100;
 
 /** @deprecated alias — garder pour imports historiques ; valeur = plafond unités. */
 export const MODULE_COMPLETION_META_HITS = MODULE_COMPLETION_UNITS;
 
-/** Sans bloc META : progression visible à chaque réponse d’André sur le module suivi. */
-export const MODULE_MICRO_BUMP_PER_EXCHANGE = 4;
+/** Résultat de la dernière réponse élève (obligatoire dans le JSON META). */
+export type ProgrammeMetaOutcome = "fail" | "weak" | "ok" | "good" | "excellent";
 
-/** Avec META : bonus par numéro de module cité dans le JSON. */
-export const MODULE_META_BUMP_PER_CHAPTER = 12;
+/** Points radar (échelle 0–100) ajoutés **par compétence citée** selon la qualité de la réponse. */
+export function metaRadarPointsPerSkill(outcome: ProgrammeMetaOutcome | null): number {
+  const o = outcome ?? "fail";
+  switch (o) {
+    case "fail":
+      return 0;
+    case "weak":
+      return 0.1;
+    case "ok":
+      return 0.3;
+    case "good":
+      return 0.5;
+    case "excellent":
+      return 1;
+    default:
+      return 0;
+  }
+}
 
-/** Sans META : points radar ajoutés sur chaque axe à chaque échange. */
-export const RADAR_MICRO_PER_AXIS_EXCHANGE = 2;
-
-/** Avec META : points radar ajoutés par compétence citée dans le JSON. */
-export const RADAR_META_SKILL_DELTA = 10;
+/** Points barre module (0–100) par module cité : un peu moins que le radar pour équilibrer. */
+export function metaModulePointsPerChapter(outcome: ProgrammeMetaOutcome | null): number {
+  const r = metaRadarPointsPerSkill(outcome);
+  if (r <= 0) return 0;
+  return Math.min(1.5, r * 0.85);
+}
 
 export function moduleProgressPercent(status: ChapterProgressStatus, programmeMetaHits: number): number {
   if (status === "COMPLETED") return 100;
