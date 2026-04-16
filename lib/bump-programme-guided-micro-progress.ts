@@ -83,6 +83,11 @@ export async function bumpProgrammeGuidedMicroProgress(input: {
       select: { id: true },
     });
 
+    if (chapters.length === 0) {
+      console.warn("[bumpProgrammeGuidedMicroProgress] aucun ProgrammeChapter pour programmeId=", programmeId);
+      return;
+    }
+
     const bumpChapter = async (chapterId: string, row: { status: string; programmeMetaHits: number } | null) => {
       const status = (row?.status ?? "NOT_STARTED") as "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
       const curHits = row?.programmeMetaHits ?? 0;

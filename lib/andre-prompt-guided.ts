@@ -163,7 +163,7 @@ Après tout le texte utile pour l’élève, termine **systématiquement** par l
 
 Schéma JSON :
 - \`skills\` : tableau (1 à 6) de chaînes parmi **exactement** : ${COMPETENCY_RADAR_LABELS.join(", ")}.
-- \`chapters\` : tableau d’entiers = **numéros d’ordre des modules** (voir « Modules (parcours Studelio) » : *Module 1*, *Module 2*… jusqu’à 6) sur lesquels porte **surtout** ce message ; \`[]\` si rien de clair. Ces numéros pilotent la progression automatique côté élève.
+- \`chapters\` : tableau d’entiers = **numéros d’ordre des modules** (voir « Modules (parcours Studelio) » : *Module 1*, *Module 2*… jusqu’à 6) sur lesquels porte **surtout** ce message. **Renseigne toujours les numéros** qui correspondent aux compétences citées (ex. Grammaire → 1, Orthographe → 2…) : c’est ce qui fait avancer les barres « module » côté élève. \`[]\` seulement si tu n’as vraiment aucune idée du module visé.
 
 **Exemple** (sans code fence dans ta réponse réelle) — enchaînement après ton dernier paragraphe visible :
 \`[[STUDELIO_META]]\` puis ligne suivante :

@@ -121,6 +121,26 @@ function inferSkillsFromChapterOrders(
   }
 }
 
+/** Si le JSON ne liste pas `chapters` mais des `skills`, alignement sur les 6 modules Studelio (ordre 1–6). */
+function inferChapterOrdersFromSkills(skills: readonly CompetencyRadarLabel[]): number[] {
+  const seen = new Set<number>();
+  const out: number[] = [];
+  for (const lab of skills) {
+    const mod = STUDELIO_STANDARD_MODULES_DEF.find((m) => {
+      const raw = m.skills[0];
+      const asLab =
+        normalizeSkillToLabel(raw) ??
+        ((COMPETENCY_RADAR_LABELS as readonly string[]).includes(raw) ? (raw as CompetencyRadarLabel) : null);
+      return asLab === lab;
+    });
+    if (mod && !seen.has(mod.order)) {
+      seen.add(mod.order);
+      out.push(mod.order);
+    }
+  }
+  return out;
+}
+
 /** Affichage (streaming ou anciens messages) : coupe tout à partir du marqueur META. */
 export function previewWithoutMetaTail(text: string): string {
   const i = findLastMetaIndex(text);
@@ -152,10 +172,13 @@ export function stripProgrammeGuidedMeta(raw: string): { content: string; meta: 
         skills.push(lab);
       }
     }
-    const chapterOrders = Array.from(new Set(parsed.data.chapters)).filter((n) => Number.isFinite(n) && n > 0);
+    let chapterOrders = Array.from(new Set(parsed.data.chapters)).filter((n) => Number.isFinite(n) && n > 0);
 
     if (skills.length === 0 && chapterOrders.length > 0) {
       inferSkillsFromChapterOrders(chapterOrders, seen, skills);
+    }
+    if (chapterOrders.length === 0 && skills.length > 0) {
+      chapterOrders = inferChapterOrdersFromSkills(skills);
     }
 
     if (skills.length === 0 && chapterOrders.length === 0) {

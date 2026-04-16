@@ -2,6 +2,7 @@
 
 import { BookMarked, Info, MessageCircle, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChatMarkdown } from "@/components/chat-markdown";
 import { previewWithoutMetaTail } from "@/lib/programme-guided-meta";
@@ -98,6 +99,7 @@ type SessionProps = {
 };
 
 export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
+  const router = useRouter();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessageRow[]>([]);
   const [input, setInput] = useState("");
@@ -272,6 +274,9 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
       }
 
       await loadMessages(sessionId);
+      if (!streamError && (receivedDone || assistant.trim().length > 0)) {
+        router.refresh();
+      }
     } catch {
       setError("Erreur réseau.");
       setMessages((prev) => prev.filter((m) => m.id !== userMsg.id));

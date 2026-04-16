@@ -449,6 +449,7 @@ export async function POST(req: Request) {
               });
             }
             revalidatePath("/app/programme");
+            revalidatePath("/app/programme/seance");
           } catch (e) {
             console.error("[chat] programme guided progress", e);
           }

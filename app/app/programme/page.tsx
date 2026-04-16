@@ -1,6 +1,8 @@
 import type { ChapterProgressStatus } from "@prisma/client";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+
+export const dynamic = "force-dynamic";
 import { auth } from "@/auth";
 import { buttonVariants } from "@/components/ui/button";
 import { StudentProgramme } from "@/components/student-programme";
