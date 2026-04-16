@@ -1,9 +1,14 @@
+import type { ChapterProgressStatus } from "@prisma/client";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { StudentDashboardView } from "@/components/student-dashboard-view";
+import { findStudentChapterProgressRowsSafe } from "@/lib/load-student-chapter-progress-safe";
+import { loadStudentCompetencyScoresSafe } from "@/lib/load-student-competency-scores";
 import { prisma } from "@/lib/prisma";
 import { epreuveBlancheShortLabel } from "@/lib/blanc-kind";
 import { niveauLabel, planLabel, subStatusLabel } from "@/lib/labels";
+import { countChapterStats } from "@/lib/programme-radar";
+import { ensureStudentProgrammeLinkedToCanonical } from "@/lib/student-programme-canonical";
 
 export default async function StudentDashboardPage({
   searchParams,
@@ -39,6 +44,42 @@ export default async function StudentDashboardPage({
   const prog = sp.programme;
   const sub = user.subscription;
 
+  await ensureStudentProgrammeLinkedToCanonical({
+    studentProfileId: sp.id,
+    niveau: sp.niveau,
+    programmeIdOnProfile: sp.programmeId,
+    programmeRelationId: prog?.id ?? null,
+  });
+
+  const programmeId =
+    (await prisma.studentProfile.findUnique({
+      where: { id: sp.id },
+      select: { programmeId: true },
+    }))?.programmeId ??
+    (await prisma.programme.findUnique({ where: { niveau: sp.niveau }, select: { id: true } }))?.id ??
+    null;
+
+  const parcoursCompetencyScores = await loadStudentCompetencyScoresSafe(sp.id);
+
+  let parcoursModuleStats: {
+    completed: number;
+    inProgress: number;
+    notStarted: number;
+    total: number;
+  } | null = null;
+  if (programmeId) {
+    const chapterRows = await prisma.programmeChapter.findMany({
+      where: { programmeId },
+      select: { id: true },
+    });
+    const ids = chapterRows.map((c) => c.id);
+    const progressRows = await findStudentChapterProgressRowsSafe(sp.id, ids);
+    const byChapter: Record<string, ChapterProgressStatus | undefined> = {};
+    for (const r of progressRows) byChapter[r.chapterId] = r.status;
+    const stats = countChapterStats(ids, byChapter);
+    parcoursModuleStats = { ...stats, total: ids.length };
+  }
+
   return (
     <StudentDashboardView
       checkoutOk={Boolean(checkoutOk)}
@@ -55,6 +96,8 @@ export default async function StudentDashboardPage({
       subStatusText={sub ? subStatusLabel[sub.status] : null}
       subStatus={sub ? sub.status : null}
       parentEmail={sp.parent?.user?.email ?? null}
+      parcoursCompetencyScores={parcoursCompetencyScores}
+      parcoursModuleStats={parcoursModuleStats}
     />
   );
 }

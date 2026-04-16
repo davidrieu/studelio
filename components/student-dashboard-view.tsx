@@ -1,9 +1,11 @@
 import Link from "next/link";
-import { GraduationCap, Timer, UserRound, CreditCard } from "lucide-react";
+import { Timer, UserRound, CreditCard } from "lucide-react";
 import type { SubStatus } from "@prisma/client";
 import { AddParentTutorForm } from "@/components/add-parent-tutor-form";
 import { StudentDashboardCharts } from "@/components/student-dashboard-charts";
+import { StudentDashboardParcoursSnapshot } from "@/components/student-dashboard-parcours-snapshot";
 import { StudentDashboardQuickLinks } from "@/components/student-dashboard-quick-links";
+import type { CompetencyScores } from "@/lib/programme-guided-meta";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -57,6 +59,13 @@ export function StudentDashboardView(props: {
   subStatusText: string | null;
   subStatus: SubStatus | null;
   parentEmail: string | null;
+  parcoursCompetencyScores: CompetencyScores | null;
+  parcoursModuleStats: {
+    completed: number;
+    inProgress: number;
+    notStarted: number;
+    total: number;
+  } | null;
 }) {
   const hour = new Date().getHours();
   const greet = greetingForHour(hour);
@@ -144,60 +153,10 @@ export function StudentDashboardView(props: {
 
       <section aria-labelledby="quick-links-heading" className="space-y-5">
         <StudentDashboardQuickLinks epreuveShortLabel={props.epreuveShortLabel} />
-
-        <div
-          className={cn(
-            "relative overflow-hidden rounded-[24px] border border-[var(--studelio-border)]",
-            "bg-gradient-to-br from-[var(--studelio-blue-dim)]/50 via-card to-[var(--studelio-bg-soft)]/90",
-            "p-5 shadow-[var(--studelio-shadow)] sm:p-6",
-          )}
-        >
-          <div
-            className="pointer-events-none absolute -right-12 top-0 h-32 w-32 rounded-full bg-[var(--studelio-blue)]/[0.12] blur-2xl"
-            aria-hidden
-          />
-          <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex min-w-0 gap-4">
-              <span
-                className={cn(
-                  "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white shadow-lg",
-                  "bg-gradient-to-br from-[#4f7ae8] to-[#2451b0] shadow-[#2451b0]/25",
-                )}
-              >
-                <GraduationCap className="h-6 w-6" strokeWidth={2.2} aria-hidden />
-              </span>
-              <div className="min-w-0">
-                <h2
-                  id="programme-seance-spotlight-heading"
-                  className="font-display text-lg font-semibold tracking-tight text-[var(--studelio-text)] sm:text-xl"
-                >
-                  Séance programme avec André
-                </h2>
-                <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-muted-foreground">
-                  Exercices avec André sur ton programme (même page que la tuile «&nbsp;Séance programme&nbsp;» dans les
-                  accès rapides).
-                </p>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  <Link
-                    href="/app/programme"
-                    className="font-medium text-[var(--studelio-blue)] underline-offset-2 hover:underline"
-                  >
-                    Radar et modules du parcours
-                  </Link>
-                </p>
-              </div>
-            </div>
-            <Link
-              href="/app/programme/seance"
-              className={cn(
-                buttonVariants({ size: "lg" }),
-                "shrink-0 justify-center rounded-full px-6 sm:min-w-[200px]",
-              )}
-            >
-              Ouvrir la séance
-            </Link>
-          </div>
-        </div>
+        <StudentDashboardParcoursSnapshot
+          competencyScores={props.parcoursCompetencyScores}
+          moduleStats={props.parcoursModuleStats}
+        />
       </section>
 
       <section className="rounded-[24px] border border-[var(--studelio-border)] bg-card p-6 shadow-[var(--studelio-shadow)] sm:p-8">
