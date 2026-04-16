@@ -55,17 +55,25 @@ function fold(s: string): string {
 
 /** Décode les libellés renvoyés par le modèle (tolère accents / casse). */
 export function normalizeSkillToLabel(raw: string): CompetencyRadarLabel | null {
-  const t = fold(raw);
+  const t = fold(raw)
+    .replace(/[.!?;:]+$/g, "")
+    .replace(/^[^a-zà-ÿ0-9]+/i, "");
   const map: [string, CompetencyRadarLabel][] = [
     ["grammaire", "Grammaire"],
+    ["la grammaire", "Grammaire"],
     ["orthographe", "Orthographe"],
+    ["l orthographe", "Orthographe"],
     ["conjugaison", "Conjugaison"],
+    ["la conjugaison", "Conjugaison"],
     ["vocabulaire", "Vocabulaire"],
+    ["le vocabulaire", "Vocabulaire"],
     ["expression ecrite", "Expression écrite"],
     ["expressionecrite", "Expression écrite"],
     ["redaction", "Expression écrite"],
+    ["la redaction", "Expression écrite"],
     ["ecriture", "Expression écrite"],
     ["lecture", "Lecture"],
+    ["la lecture", "Lecture"],
   ];
   for (const [needle, label] of map) {
     if (t === needle) return label;
@@ -77,20 +85,17 @@ export function labelToPrismaField(label: CompetencyRadarLabel): keyof Competenc
   return labelToDbKey[label];
 }
 
-const META_FULL = "\n[[STUDELIO_META]]\n";
-const META_COMPACT = "[[STUDELIO_META]]";
+/** Dernière occurrence du marqueur (tolère espaces, casse, \r\n). */
+const META_BLOCK_RE = /\[\[\s*STUDELIO_META\s*\]\]/gi;
 
-function findLastMetaIndex(raw: string): number {
-  const full = raw.lastIndexOf(META_FULL);
-  if (full >= 0) return full;
-  return raw.lastIndexOf(META_COMPACT);
-}
-
-function sliceAfterMeta(raw: string, idx: number): string {
-  if (raw.slice(idx, idx + META_FULL.length) === META_FULL) {
-    return raw.slice(idx + META_FULL.length);
+function findLastMetaBlock(raw: string): { blockStart: number; blockEnd: number } | null {
+  let last: { blockStart: number; blockEnd: number } | null = null;
+  META_BLOCK_RE.lastIndex = 0;
+  let m: RegExpExecArray | null;
+  while ((m = META_BLOCK_RE.exec(raw)) !== null) {
+    last = { blockStart: m.index, blockEnd: m.index + m[0].length };
   }
-  return raw.slice(idx + META_COMPACT.length);
+  return last;
 }
 
 function unwrapJsonPayload(raw: string): string {
@@ -99,6 +104,23 @@ function unwrapJsonPayload(raw: string): string {
     t = t.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "");
   }
   return t.trim();
+}
+
+/** Extrait le premier objet JSON `{ ... }` (le modèle ajoute parfois du texte avant/après). */
+function extractFirstJsonObject(raw: string): string | null {
+  const t = raw.trim();
+  const start = t.indexOf("{");
+  if (start < 0) return null;
+  const end = t.lastIndexOf("}");
+  if (end <= start) return null;
+  return t.slice(start, end + 1);
+}
+
+function sanitizeJsonForParse(s: string): string {
+  return s
+    .replace(/\u201c|\u201d|\u00ab|\u00bb/g, '"')
+    .replace(/\u2018|\u2019/g, "'")
+    .replace(/,(\s*[}\]])/g, "$1");
 }
 
 /** Si le JSON ne liste pas `skills` mais des `chapters`, on déduit les axes radar depuis les modules Studelio. */
@@ -143,25 +165,27 @@ function inferChapterOrdersFromSkills(skills: readonly CompetencyRadarLabel[]): 
 
 /** Affichage (streaming ou anciens messages) : coupe tout à partir du marqueur META. */
 export function previewWithoutMetaTail(text: string): string {
-  const i = findLastMetaIndex(text);
-  if (i < 0) return text;
-  return text.slice(0, i).trimEnd();
+  const span = findLastMetaBlock(text);
+  if (!span) return text;
+  return text.slice(0, span.blockStart).trimEnd();
 }
 
 /**
  * Retire le bloc META de fin si présent et valide ; sinon renvoie le texte tel quel (pas de meta).
  */
 export function stripProgrammeGuidedMeta(raw: string): { content: string; meta: ParsedProgrammeGuidedMeta | null } {
-  const idx = findLastMetaIndex(raw);
-  if (idx < 0) {
+  const span = findLastMetaBlock(raw);
+  if (!span) {
     return { content: raw.trim(), meta: null };
   }
-  const jsonPart = unwrapJsonPayload(sliceAfterMeta(raw, idx).trim());
-  const content = raw.slice(0, idx).trimEnd();
+  const afterMarker = raw.slice(span.blockEnd).trim();
+  const unwrapped = unwrapJsonPayload(afterMarker);
+  const jsonPart = extractFirstJsonObject(unwrapped) ?? unwrapped;
+  const content = raw.slice(0, span.blockStart).trimEnd();
   try {
-    const parsed = metaSchema.safeParse(JSON.parse(jsonPart));
+    const parsed = metaSchema.safeParse(JSON.parse(sanitizeJsonForParse(jsonPart)));
     if (!parsed.success) {
-      return { content: raw.trim(), meta: null };
+      return { content: content.trim(), meta: null };
     }
     const skills: CompetencyRadarLabel[] = [];
     const seen = new Set<CompetencyRadarLabel>();
@@ -182,10 +206,10 @@ export function stripProgrammeGuidedMeta(raw: string): { content: string; meta: 
     }
 
     if (skills.length === 0 && chapterOrders.length === 0) {
-      return { content: raw.trim(), meta: null };
+      return { content: content.trim(), meta: null };
     }
     return { content: content.trim(), meta: { skills, chapterOrders } };
   } catch {
-    return { content: raw.trim(), meta: null };
+    return { content: content.trim(), meta: null };
   }
 }

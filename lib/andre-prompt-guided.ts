@@ -166,10 +166,10 @@ Exemples (à adapter) : « Studelio vient de créditer un mini-boost **Grammaire
 ## Suivi Studelio (obligatoire — **chaque** message)
 Après ton paragraphe pédagogique **et** le mini-paragraphe « progrès » ci-dessus, termine **systématiquement** par le bloc technique suivant (il alimente le radar et les **barres modules** dans l’app). **Aucun** texte après le JSON.
 
-1. Saut de ligne
-2. Ligne **exacte** : \`[[STUDELIO_META]]\`
-3. Saut de ligne
-4. **Une seule ligne** de JSON compact, sans Markdown autour.
+1. Saut de ligne (recommandé)
+2. Ligne marqueur : \`[[STUDELIO_META]]\` (éventuellement avec **un espace** après \`[[\` et avant \`]]\` si besoin)
+3. Saut de ligne ou texte court, puis **un objet JSON** \`{...}\` — peut tenir sur **une ou plusieurs lignes** ; pas d’autre texte **après** l’accolade fermante \`}\`.
+4. Évite les guillemets typographiques « courbes » ; dans le JSON, utilise uniquement le guillemet double droit du clavier.
 
 Schéma JSON :
 - \`skills\` : tableau (1 à 6) de chaînes parmi **exactement** : ${COMPETENCY_RADAR_LABELS.join(", ")}.
@@ -179,5 +179,6 @@ Schéma JSON :
 \`[[STUDELIO_META]]\` puis ligne suivante :
 \`{"skills":["Grammaire","Lecture"],"chapters":[1]}\`
 
-Le serveur reconnaît le bloc **uniquement** si la ligne du marqueur est exactement \`[[STUDELIO_META]]\` entourée des sauts de ligne comme décrit (équivalent interne : \`${STUDELIO_META_MARKER.trim()}\` entre le corps du message et le JSON).`;
+**Important** : ce JSON (et non le texte libre du dessus) est ce qui **met à jour** le radar et les barres modules dans l’app. Sans objet \`{...}\` valide après le marqueur, la progression reste figée.
+`;
 }

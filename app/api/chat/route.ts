@@ -437,6 +437,7 @@ export async function POST(req: Request) {
         const programmeIdForMeta = sp.programmeId ?? programmeForPrompt?.id ?? null;
         let studelioProgressHint: string | null = null;
         if (isGuided && programmeIdForMeta) {
+          await ensureProgrammeStandardModules(programmeIdForMeta);
           try {
             if (strippedGuided?.meta) {
               await applyProgrammeGuidedSessionMeta({
