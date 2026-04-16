@@ -445,7 +445,11 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Réponds librement à André, ou utilise les deux boutons au-dessus…"
+              placeholder={
+                userHasReplied
+                  ? "Réponds à André…"
+                  : "Réponds librement à André, ou utilise les deux boutons au-dessus…"
+              }
               rows={3}
               disabled={sending || bootstrapping || !sessionId}
               className={cn(
