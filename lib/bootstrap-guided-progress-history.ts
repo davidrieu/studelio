@@ -2,7 +2,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { stripProgrammeGuidedMeta, type ParsedProgrammeGuidedMeta } from "@/lib/programme-guided-meta";
 import { applyProgrammeGuidedSessionMeta } from "@/lib/apply-programme-guided-session-meta";
-import { MODULE_COMPLETION_META_HITS } from "@/lib/programme-module-progress";
+import { MODULE_COMPLETION_UNITS } from "@/lib/programme-module-progress";
 
 const META_SNIPPET = "[[STUDELIO_META]]";
 const REPLAY_CAP = 400;
@@ -111,8 +111,8 @@ export async function bootstrapGuidedProgressHistoryOnce(input: {
         select: { id: true },
       });
       const hits = Math.min(
-        MODULE_COMPLETION_META_HITS - 1,
-        Math.max(1, Math.floor(andreCount / 10)),
+        MODULE_COMPLETION_UNITS - 1,
+        Math.max(1, Math.floor(andreCount / 10)) * 25,
       );
       for (const ch of chapters) {
         const row = await prisma.studentChapterProgress.findUnique({

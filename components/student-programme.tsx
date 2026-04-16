@@ -119,9 +119,9 @@ export function StudentProgramme({
         <section className="rounded-[20px] border border-[var(--studelio-border)] bg-card p-6 shadow-[var(--studelio-shadow)]">
           <h2 className="font-display text-lg font-semibold text-[var(--studelio-text)]">Radar des compétences</h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Chaque axe progresse quand tu travailles avec André en <strong>séance programme</strong> (META en fin de
-            message). Les <strong>modules</strong> à droite se mettent à jour automatiquement selon ce qu’André indique —
-            tu n’as rien à cocher à la main.
+            Chaque axe progresse à <strong>chaque échange</strong> en séance programme (petit bonus), et davantage quand
+            André envoie le bloc <strong>META</strong> en fin de message. Même chose pour les barres des modules à
+            droite : tu vois avancer sans rien cocher à la main.
           </p>
           <div className="mt-4 h-[min(22rem,55vw)] w-full min-h-[240px]">
             {radarMounted ?
@@ -149,9 +149,9 @@ export function StudentProgramme({
         <section className="rounded-[20px] border border-[var(--studelio-border)] bg-card p-6 shadow-[var(--studelio-shadow)]">
           <h2 className="font-display text-lg font-semibold text-[var(--studelio-text)]">Modules</h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Les libellés des 6 modules sont toujours ceux du programme Studelio (synchro auto). Radar et barres : META
-            d’André en fin de message en séance programme ; un premier passage sur cette page peut aussi rattraper
-            l’historique (anciennes séances).
+            Les libellés des 6 modules sont toujours ceux du programme Studelio (synchro auto). Progression en petits pas
+            à chaque réponse d’André, plus fort quand le META liste les modules ; un premier passage sur cette page peut
+            rattraper l’historique (anciennes séances).
           </p>
           <ul className="mt-4 space-y-5">
             {chapters.length === 0 ? (
@@ -202,7 +202,9 @@ export function StudentProgramme({
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                         <span>Progression</span>
-                        <span className="tabular-nums font-medium text-[var(--studelio-text)]">{pct}%</span>
+                        <span className="tabular-nums font-medium text-[var(--studelio-text)]">
+                          {pct % 1 === 0 ? pct : pct.toFixed(1)}%
+                        </span>
                       </div>
                       <div
                         className="h-2.5 w-full overflow-hidden rounded-full bg-muted/80 dark:bg-muted/50"

@@ -10,6 +10,7 @@ import { andreModel, getAnthropic } from "@/lib/anthropic";
 import { formatLoadedFolderForPrompt, loadProgrammeFolderForNiveau } from "@/lib/programme-folder-loader";
 import { niveauLabel } from "@/lib/labels";
 import { applyProgrammeGuidedSessionMeta } from "@/lib/apply-programme-guided-session-meta";
+import { bumpProgrammeGuidedMicroProgress } from "@/lib/bump-programme-guided-micro-progress";
 import { ensureProgrammeStandardModules } from "@/lib/ensure-programme-standard-modules";
 import { findStudentChapterProgressRowsSafe } from "@/lib/load-student-chapter-progress-safe";
 import { prisma } from "@/lib/prisma";
@@ -433,16 +434,23 @@ export async function POST(req: Request) {
         });
 
         const programmeIdForMeta = sp.programmeId ?? programmeForPrompt?.id ?? null;
-        if (isGuided && strippedGuided?.meta && programmeIdForMeta) {
+        if (isGuided && programmeIdForMeta) {
           try {
-            await applyProgrammeGuidedSessionMeta({
-              studentProfileId: sp.id,
-              programmeId: programmeIdForMeta,
-              meta: strippedGuided.meta,
-            });
+            if (strippedGuided?.meta) {
+              await applyProgrammeGuidedSessionMeta({
+                studentProfileId: sp.id,
+                programmeId: programmeIdForMeta,
+                meta: strippedGuided.meta,
+              });
+            } else {
+              await bumpProgrammeGuidedMicroProgress({
+                studentProfileId: sp.id,
+                programmeId: programmeIdForMeta,
+              });
+            }
             revalidatePath("/app/programme");
           } catch (e) {
-            console.error("[chat] programme guided meta", e);
+            console.error("[chat] programme guided progress", e);
           }
         }
 

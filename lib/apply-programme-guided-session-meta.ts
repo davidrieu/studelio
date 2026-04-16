@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { labelToPrismaField, type ParsedProgrammeGuidedMeta } from "@/lib/programme-guided-meta";
-import { MODULE_COMPLETION_META_HITS } from "@/lib/programme-module-progress";
+import {
+  MODULE_COMPLETION_UNITS,
+  MODULE_META_BUMP_PER_CHAPTER,
+} from "@/lib/programme-module-progress";
 
 /** Points radar par compétence citée dans un META (visible dès les premières séances). */
 const SKILL_DELTA = 10;
@@ -97,28 +100,31 @@ export async function applyProgrammeGuidedSessionMeta(input: {
             studentProfileId,
             chapterId: chapter.id,
             status: "IN_PROGRESS",
-            programmeMetaHits: 1,
+            programmeMetaHits: MODULE_META_BUMP_PER_CHAPTER,
           },
         });
         continue;
       }
 
-      const nextHits = row.programmeMetaHits + 1;
+      const nextHits = row.programmeMetaHits + MODULE_META_BUMP_PER_CHAPTER;
 
       if (row.status === "NOT_STARTED") {
         await tx.studentChapterProgress.update({
           where: {
             studentProfileId_chapterId: { studentProfileId, chapterId: chapter.id },
           },
-          data: { status: "IN_PROGRESS", programmeMetaHits: 1 },
+          data: {
+            status: "IN_PROGRESS",
+            programmeMetaHits: Math.min(MODULE_COMPLETION_UNITS - 1, nextHits),
+          },
         });
       } else if (row.status === "IN_PROGRESS") {
-        if (nextHits >= MODULE_COMPLETION_META_HITS) {
+        if (nextHits >= MODULE_COMPLETION_UNITS) {
           await tx.studentChapterProgress.update({
             where: {
               studentProfileId_chapterId: { studentProfileId, chapterId: chapter.id },
             },
-            data: { status: "COMPLETED", programmeMetaHits: nextHits },
+            data: { status: "COMPLETED", programmeMetaHits: MODULE_COMPLETION_UNITS },
           });
         } else {
           await tx.studentChapterProgress.update({
