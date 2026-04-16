@@ -14,7 +14,7 @@ export default async function ParentElevesPage() {
         <div>
           <h1 className="font-display text-2xl font-semibold">Élèves</h1>
           <p className="mt-2 max-w-2xl text-muted-foreground">
-            Détail des comptes reliés : séance programme, radar des compétences, temps passé et usage d’André.
+            Détail des comptes reliés : progression, temps passé et usage d’André.
           </p>
         </div>
         <Link

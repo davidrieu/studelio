@@ -7,20 +7,12 @@ function formatLastSession(d: Date | null) {
   return new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short" }).format(d);
 }
 
-function formatRadarMoyenne(v: number): string {
-  return Number.isInteger(v) ? String(v) : v.toFixed(1);
-}
-
 type Props = { row: ParentChildRow; variant?: "compact" | "full" };
 
 export function ChildProgressCard({ row, variant = "compact" }: Props) {
   const niveau = niveauLabel[row.niveau as Niveau] ?? row.niveau;
   const displayName = row.name?.trim() || row.email;
-
-  const moduleFootnote =
-    row.chaptersTotal > 0
-      ? `${row.chaptersCompleted} module${row.chaptersCompleted > 1 ? "s" : ""} marqué(s) « terminé » sur ${row.chaptersTotal} au parcours (ça avance aussi sans tout cocher).`
-      : "Parcours Studelio : programme pas encore relié ou en cours de configuration.";
+  const p = row.progressPercent;
 
   return (
     <article
@@ -47,37 +39,24 @@ export function ChildProgressCard({ row, variant = "compact" }: Props) {
       </header>
       <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
         <div className="sm:col-span-2">
-          <dt className="text-muted-foreground">Activité sur le programme</dt>
-          <dd className="mt-1 space-y-2 font-medium leading-snug text-[var(--studelio-text-body)]">
-            {row.radarMoyenne !== null ? (
-              <p>
-                <span className="text-[var(--studelio-text)]">Radar des compétences</span> (moyenne des six axes,
-                0–100) : environ <span className="tabular-nums text-[var(--studelio-blue)]">{formatRadarMoyenne(row.radarMoyenne)} %</span> — ce chiffre monte au fil des séances avec André, même sans finir tous les modules.
-              </p>
-            ) : (
-              <p>
-                Le radar des compétences apparaîtra dès que l’élève aura un peu travaillé en{" "}
-                <span className="text-[var(--studelio-text)]">séance programme</span> avec André.
-              </p>
-            )}
-            {row.lastProgrammeSeancePreview ? (
-              <div className="rounded-xl border border-[var(--studelio-border)]/80 bg-[var(--studelio-bg-soft)]/50 px-3 py-2.5 text-sm font-normal text-[var(--studelio-text-body)]">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  Dernier message d’André (séance programme)
-                  {row.lastProgrammeSeanceAt ? (
-                    <span className="ml-1 font-normal normal-case text-muted-foreground">
-                      · {formatLastSession(row.lastProgrammeSeanceAt)}
-                    </span>
-                  ) : null}
-                </p>
-                <p className="mt-1.5 text-[var(--studelio-text)]">« {row.lastProgrammeSeancePreview} »</p>
+          <dt className="text-muted-foreground">Progression</dt>
+          <dd className="mt-2">
+            <div className="flex items-center gap-3">
+              <div
+                className="h-3 min-w-0 flex-1 overflow-hidden rounded-full bg-muted/70 dark:bg-muted/40"
+                role="progressbar"
+                aria-valuenow={p}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label={`Progression environ ${p} pour cent`}
+              >
+                <div
+                  className="h-full rounded-full bg-[var(--studelio-blue)] transition-[width] duration-500 ease-out"
+                  style={{ width: `${p}%` }}
+                />
               </div>
-            ) : row.onboardingDone ? (
-              <p className="text-sm font-normal text-muted-foreground">
-                Pas encore d’échange enregistré en séance programme — dès la prochaine séance, un extrait s’affichera ici.
-              </p>
-            ) : null}
-            <p className="text-xs font-normal leading-relaxed text-muted-foreground">{moduleFootnote}</p>
+              <span className="shrink-0 text-sm font-semibold tabular-nums text-[var(--studelio-text)]">{p} %</span>
+            </div>
           </dd>
         </div>
         <div>

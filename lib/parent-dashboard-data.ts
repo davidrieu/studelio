@@ -1,6 +1,5 @@
 import type { StudentCompetencyProgress } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { previewWithoutMetaTail } from "@/lib/programme-guided-meta";
 
 export type ParentChildRow = {
   profileId: string;
@@ -17,11 +16,8 @@ export type ParentChildRow = {
   chaptersTotal: number;
   chatSessions: number;
   blancEnrollments: number;
-  /** Moyenne des six axes radar (0–100), null si pas encore de ligne en base. */
-  radarMoyenne: number | null;
-  /** Extrait du dernier message d’André en séance programme (sans bloc META). */
-  lastProgrammeSeancePreview: string | null;
-  lastProgrammeSeanceAt: Date | null;
+  /** 0–100 : radar si dispo, sinon avancement modules, sinon 0. */
+  progressPercent: number;
 };
 
 function meanRadarFromRow(row: {
@@ -41,13 +37,15 @@ function meanRadarFromRow(row: {
     row.lecture,
   ];
   const sum = vals.reduce((a, v) => a + Math.min(100, Math.max(0, Number(v) || 0)), 0);
-  return Math.round((sum / 6) * 10) / 10;
+  return Math.min(100, Math.round((sum / 6) * 10) / 10);
 }
 
-function truncatePreview(text: string, max = 160): string {
-  const t = text.replace(/\s+/g, " ").trim();
-  if (t.length <= max) return t;
-  return `${t.slice(0, max - 1)}…`;
+function computeProgressPercent(radar: number | null, chaptersCompleted: number, chaptersTotal: number): number {
+  if (radar !== null) return Math.min(100, Math.max(0, Math.round(radar)));
+  if (chaptersTotal > 0) {
+    return Math.min(100, Math.max(0, Math.round((chaptersCompleted / chaptersTotal) * 100)));
+  }
+  return 0;
 }
 
 export async function getParentChildrenRows(parentUserId: string): Promise<ParentChildRow[]> {
@@ -87,30 +85,13 @@ export async function getParentChildrenRows(parentUserId: string): Promise<Paren
         competency = null;
       }
 
-      const [chatSessions, blancEnrollments, lastGuidedMsg] = await Promise.all([
+      const [chatSessions, blancEnrollments] = await Promise.all([
         prisma.chatSession.count({ where: { userId: child.userId } }),
         prisma.blancEnrollment.count({ where: { userId: child.userId } }),
-        prisma.chatMessage.findFirst({
-          where: {
-            role: "ANDRE",
-            session: { userId: child.userId, kind: "PROGRAMME_GUIDED" },
-          },
-          orderBy: { createdAt: "desc" },
-          select: { content: true, createdAt: true },
-        }),
       ]);
 
-      let radarMoyenne: number | null = null;
-      if (competency) {
-        radarMoyenne = meanRadarFromRow(competency);
-      }
-
-      let lastProgrammeSeancePreview: string | null = null;
-      let lastProgrammeSeanceAt: Date | null = null;
-      if (lastGuidedMsg?.content?.trim()) {
-        lastProgrammeSeancePreview = truncatePreview(previewWithoutMetaTail(lastGuidedMsg.content));
-        lastProgrammeSeanceAt = lastGuidedMsg.createdAt;
-      }
+      const radarMoyenne = competency ? meanRadarFromRow(competency) : null;
+      const progressPercent = computeProgressPercent(radarMoyenne, completed, chaptersTotal);
 
       return {
         profileId: child.id,
@@ -127,9 +108,7 @@ export async function getParentChildrenRows(parentUserId: string): Promise<Paren
         chaptersTotal,
         chatSessions,
         blancEnrollments,
-        radarMoyenne,
-        lastProgrammeSeancePreview,
-        lastProgrammeSeanceAt,
+        progressPercent,
       } satisfies ParentChildRow;
     }),
   );

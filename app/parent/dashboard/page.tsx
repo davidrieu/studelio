@@ -13,8 +13,7 @@ export default async function ParentDashboardPage() {
       <div className="rounded-[20px] border border-[var(--studelio-border)] bg-card p-8 shadow-[var(--studelio-shadow)]">
         <h1 className="font-display text-2xl font-semibold">Tableau de bord</h1>
         <p className="mt-2 max-w-2xl text-muted-foreground">
-          Vue d’ensemble des comptes élèves reliés : dernière séance programme, repère radar des compétences, activité.
-          Les données se mettent à jour quand l’élève utilise Studelio.
+          Vue d’ensemble des comptes élèves reliés. La barre de progression se met à jour quand l’élève utilise Studelio.
         </p>
       </div>
 
