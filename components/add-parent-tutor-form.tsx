@@ -21,7 +21,7 @@ export function AddParentTutorForm() {
   }, [state?.ok, router]);
 
   return (
-    <form ref={formRef} action={formAction} className="space-y-4">
+    <form ref={formRef} action={formAction} className="min-w-0 space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="parentEmail">Email du parent ou tuteur</Label>
@@ -69,7 +69,7 @@ export function AddParentTutorForm() {
           {state.message}
         </p>
       ) : null}
-      <Button type="submit" className="rounded-full">
+      <Button type="submit" className="w-full rounded-full sm:w-auto">
         Enregistrer le compte parent
       </Button>
     </form>

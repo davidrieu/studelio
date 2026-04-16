@@ -119,7 +119,7 @@ export function StudentDashboardCharts(props: {
   const radarData = radarFromRows(rows);
 
   return (
-    <div className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 min-[480px]:gap-5">
+    <div className="grid min-w-0 grid-cols-1 gap-4 min-[480px]:grid-cols-2 min-[480px]:gap-5">
       <motion.div
         className="relative overflow-hidden rounded-2xl border border-[var(--studelio-border)] bg-gradient-to-b from-card to-[var(--studelio-bg-soft)]/40 p-4 pb-5 shadow-[var(--studelio-shadow)] sm:p-5 sm:pb-6"
         initial={{ opacity: 0, y: 14, scale: 0.98 }}
@@ -136,13 +136,17 @@ export function StudentDashboardCharts(props: {
         <p className="relative mt-1 text-[11px] leading-snug text-muted-foreground sm:text-xs">
           Échelle relative (série 14 j., temps 12 h…).
         </p>
-        <div className="relative mt-2 min-h-0 pb-1" style={{ height: chartH }}>
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="relative mt-2 min-h-0 w-full min-w-0 pb-1" style={{ height: chartH }}>
+          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
             <RadarChart
               cx="50%"
               cy="48%"
-              outerRadius="76%"
-              margin={{ top: 8, right: 12, bottom: 26, left: 12 }}
+              outerRadius={compact ? "68%" : "76%"}
+              margin={
+                compact ?
+                  { top: 6, right: 8, bottom: 22, left: 8 }
+                : { top: 8, right: 12, bottom: 26, left: 12 }
+              }
               data={radarData}
             >
               <defs>
@@ -157,7 +161,11 @@ export function StudentDashboardCharts(props: {
                 </linearGradient>
               </defs>
               <PolarGrid stroke="var(--studelio-border)" strokeDasharray="3 5" strokeOpacity={0.85} />
-              <PolarAngleAxis dataKey="subject" tick={{ fill: "var(--studelio-text-muted)", fontSize: 10 }} tickLine={false} />
+              <PolarAngleAxis
+                dataKey="subject"
+                tick={{ fill: "var(--studelio-text-muted)", fontSize: compact ? 9 : 10 }}
+                tickLine={false}
+              />
               <Radar
                 name="Engagement"
                 dataKey="full"
@@ -191,8 +199,8 @@ export function StudentDashboardCharts(props: {
         <p className="relative mt-1 text-[11px] leading-snug text-muted-foreground sm:text-xs">
           Survol pour le détail · repères visuels.
         </p>
-        <div className="relative mt-2 min-h-0 pb-1" style={{ height: chartH }}>
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="relative mt-2 min-h-0 w-full min-w-0 pb-1" style={{ height: chartH }}>
+          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
             <BarChart
               layout="vertical"
               data={rows}
@@ -245,7 +253,7 @@ export function StudentDashboardCharts(props: {
               <Bar
                 dataKey="pct"
                 radius={[0, 10, 10, 0]}
-                barSize={19}
+                barSize={compact ? 16 : 19}
                 isAnimationActive
                 animationDuration={1000}
                 animationEasing="ease-out"

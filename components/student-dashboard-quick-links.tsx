@@ -102,7 +102,7 @@ export function StudentDashboardQuickLinks({ epreuveShortLabel }: { epreuveShort
   ];
 
   return (
-    <div className="relative overflow-hidden rounded-[24px] border border-[var(--studelio-border)] bg-gradient-to-br from-[var(--studelio-bg-soft)]/90 via-card to-[var(--studelio-bg-muted)]/40 p-4 shadow-[var(--studelio-shadow)] sm:rounded-[28px] sm:p-5">
+    <div className="relative min-w-0 overflow-hidden rounded-[24px] border border-[var(--studelio-border)] bg-gradient-to-br from-[var(--studelio-bg-soft)]/90 via-card to-[var(--studelio-bg-muted)]/40 p-4 shadow-[var(--studelio-shadow)] sm:rounded-[28px] sm:p-5">
       <div
         className="pointer-events-none absolute -right-24 top-0 h-48 w-48 rounded-full bg-[var(--studelio-blue)]/[0.08] blur-3xl"
         aria-hidden
@@ -113,7 +113,7 @@ export function StudentDashboardQuickLinks({ epreuveShortLabel }: { epreuveShort
       />
 
       <div className="relative mb-4 flex flex-wrap items-end justify-between gap-2 sm:mb-5">
-        <div>
+        <div className="min-w-0 flex-1">
           <div className="inline-flex items-center gap-2 rounded-full border border-[var(--studelio-border)] bg-card/80 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground backdrop-blur-sm">
             Raccourcis
           </div>
@@ -133,7 +133,7 @@ export function StudentDashboardQuickLinks({ epreuveShortLabel }: { epreuveShort
         variants={container}
         initial="hidden"
         animate="show"
-        className="relative grid grid-cols-1 gap-3 min-[380px]:grid-cols-2 sm:gap-4"
+        className="relative grid min-w-0 grid-cols-2 gap-2.5 sm:gap-4"
       >
         {tiles.map((tile) => {
           const t = themes[tile.id];
@@ -146,7 +146,7 @@ export function StudentDashboardQuickLinks({ epreuveShortLabel }: { epreuveShort
                 whileTap={{ scale: 0.98 }}
                 transition={{ type: "spring", stiffness: 400, damping: 22 }}
                 className={cn(
-                  "group relative flex min-h-[132px] flex-col justify-between overflow-hidden rounded-2xl border p-3.5 sm:min-h-[148px] sm:p-4",
+                  "group relative flex min-h-[118px] flex-col justify-between overflow-hidden rounded-2xl border p-3 sm:min-h-[148px] sm:p-4",
                   "border-white/40 bg-white/50 shadow-md backdrop-blur-md",
                   "dark:border-white/[0.08] dark:bg-white/[0.06]",
                   "ring-1 ring-transparent transition-shadow duration-300",
@@ -172,7 +172,7 @@ export function StudentDashboardQuickLinks({ epreuveShortLabel }: { epreuveShort
                 <div className="relative z-10 flex items-start justify-between gap-2">
                   <span
                     className={cn(
-                      "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white sm:h-11 sm:w-11 sm:rounded-2xl",
+                      "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white sm:h-11 sm:w-11 sm:rounded-2xl",
                       t.iconBg,
                       t.iconShadow,
                     )}

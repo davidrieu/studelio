@@ -23,8 +23,6 @@ type ParcoursModuleSnapshotStats = {
   total: number;
 };
 
-const SNAPSHOT_RADAR_H = 200;
-
 function meanRadar(scores: CompetencyScores | null): number {
   if (!scores) return 0;
   const keys: (keyof CompetencyScores)[] = [
@@ -44,9 +42,19 @@ export function StudentDashboardParcoursSnapshot(props: {
   moduleStats: ParcoursModuleSnapshotStats | null;
 }) {
   const [mounted, setMounted] = useState(false);
+  const [compact, setCompact] = useState(false);
   useEffect(() => {
     setMounted(true);
   }, []);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    const apply = () => setCompact(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+  const snapshotRadarH = compact ? 176 : 200;
+  const snapshotOuterRadius = compact ? "70%" : "78%";
 
   const rawRadar = buildCompetencyRadarChartData(props.competencyScores);
   const labelShort: Record<string, string> = {
@@ -69,7 +77,7 @@ export function StudentDashboardParcoursSnapshot(props: {
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-[24px] border border-[var(--studelio-border)]",
+        "relative min-w-0 overflow-hidden rounded-[24px] border border-[var(--studelio-border)]",
         "bg-gradient-to-br from-[var(--studelio-blue-dim)]/45 via-card to-[var(--studelio-bg-soft)]/90",
         "p-4 shadow-[var(--studelio-shadow)] sm:p-6",
       )}
@@ -78,9 +86,9 @@ export function StudentDashboardParcoursSnapshot(props: {
         className="pointer-events-none absolute -right-10 top-0 h-28 w-28 rounded-full bg-[var(--studelio-blue)]/[0.1] blur-2xl"
         aria-hidden
       />
-      <div className="relative flex flex-col gap-6 lg:flex-row lg:items-stretch lg:gap-8">
+      <div className="relative flex min-w-0 flex-col gap-6 lg:flex-row lg:items-stretch lg:gap-8">
         <div className="min-w-0 flex-1">
-          <div className="flex items-start gap-3">
+          <div className="flex min-w-0 items-start gap-3">
             <span
               className={cn(
                 "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white shadow-md",
@@ -176,16 +184,20 @@ export function StudentDashboardParcoursSnapshot(props: {
           </Link>
         </div>
 
-        <div className="relative w-full shrink-0 rounded-2xl border border-[var(--studelio-border)]/70 bg-card/60 p-3 shadow-inner lg:w-[min(100%,280px)]">
+        <div className="relative w-full min-w-0 shrink-0 rounded-2xl border border-[var(--studelio-border)]/70 bg-card/60 p-3 shadow-inner lg:w-[min(100%,280px)]">
           <p className="px-1 text-center text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
             Radar (aperçu)
           </p>
-          <div className="mt-1" style={{ height: SNAPSHOT_RADAR_H }}>
+          <div className="mt-1 min-h-0 w-full min-w-0" style={{ height: snapshotRadarH }}>
             {mounted ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart cx="50%" cy="52%" outerRadius="78%" data={radarData}>
+              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                <RadarChart cx="50%" cy="52%" outerRadius={snapshotOuterRadius} data={radarData}>
                   <PolarGrid stroke="var(--studelio-border)" />
-                  <PolarAngleAxis dataKey="subject" tick={{ fill: "var(--studelio-text-body)", fontSize: 9 }} />
+                  <PolarAngleAxis
+                    dataKey="subject"
+                    tick={{ fill: "var(--studelio-text-body)", fontSize: compact ? 8 : 9 }}
+                    tickLine={false}
+                  />
                   <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
                   <Radar
                     name="Compétences"

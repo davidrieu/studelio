@@ -72,10 +72,10 @@ export function StudentDashboardView(props: {
   const totalFmt = formatMinutes(props.totalMinutes);
 
   return (
-    <div className="space-y-10 pb-4">
+    <div className="min-w-0 w-full space-y-8 pb-4 sm:space-y-10">
       {props.checkoutOk ? (
         <p
-          className="rounded-2xl border border-[var(--studelio-green-dim)] bg-[var(--studelio-green-dim)] px-4 py-3 text-sm text-[var(--studelio-text)] shadow-sm"
+          className="text-balance rounded-2xl border border-[var(--studelio-green-dim)] bg-[var(--studelio-green-dim)] px-4 py-3 text-sm text-[var(--studelio-text)] shadow-sm"
           role="status"
         >
           Merci ! Paiement reçu. Ton abonnement se met à jour en quelques secondes via Stripe — actualise la page si le
@@ -85,7 +85,7 @@ export function StudentDashboardView(props: {
 
       <section
         className={cn(
-          "relative overflow-hidden rounded-[24px] border border-[var(--studelio-border)] sm:rounded-[28px]",
+          "relative min-w-0 overflow-hidden rounded-[24px] border border-[var(--studelio-border)] sm:rounded-[28px]",
           "bg-gradient-to-br from-[var(--studelio-bg-soft)] via-card to-[var(--studelio-bg-muted)]/80",
           "p-5 shadow-[var(--studelio-shadow)] sm:p-8 md:p-10",
         )}
@@ -98,9 +98,9 @@ export function StudentDashboardView(props: {
           className="pointer-events-none absolute -bottom-20 -left-10 h-48 w-48 rounded-full bg-violet-500/[0.06] blur-3xl"
           aria-hidden
         />
-        <div className="relative">
+        <div className="relative min-w-0">
           <p className="text-sm font-medium uppercase tracking-[0.12em] text-[var(--studelio-text-muted)]">{greet}</p>
-          <h1 className="mt-1 font-display text-2xl font-semibold tracking-tight text-[var(--studelio-text)] sm:text-3xl md:text-4xl">
+          <h1 className="mt-1 text-balance font-display text-2xl font-semibold tracking-tight text-[var(--studelio-text)] sm:text-3xl md:text-4xl">
             {props.firstName}
           </h1>
           <p className="mt-3 max-w-xl text-sm leading-relaxed text-[var(--studelio-text-body)] sm:text-base">
@@ -109,25 +109,29 @@ export function StudentDashboardView(props: {
               <>
                 {" "}
                 · Programme{" "}
-                <span className="font-semibold text-[var(--studelio-text)]">{props.programmeTitle}</span>
+                <span className="break-words font-semibold text-[var(--studelio-text)]">{props.programmeTitle}</span>
               </>
             ) : null}
           </p>
           {props.lastSessionAt ? (
-            <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-[var(--studelio-border)] bg-card/60 px-3 py-1.5 text-xs text-muted-foreground backdrop-blur-sm">
-              <Timer className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />
-              Dernière activité :{" "}
-              {new Intl.DateTimeFormat("fr-FR", {
-                dateStyle: "medium",
-                timeStyle: "short",
-              }).format(props.lastSessionAt)}
+            <p className="mt-4 flex max-w-full flex-wrap items-center gap-x-2 gap-y-1 rounded-full border border-[var(--studelio-border)] bg-card/60 px-3 py-2 text-xs text-muted-foreground backdrop-blur-sm sm:inline-flex sm:max-w-none sm:py-1.5">
+              <span className="inline-flex shrink-0 items-center gap-2">
+                <Timer className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />
+                <span className="font-medium text-[var(--studelio-text-body)]">Dernière activité</span>
+              </span>
+              <time className="min-w-0 font-mono text-[11px] text-[var(--studelio-text)] sm:text-xs" dateTime={props.lastSessionAt.toISOString()}>
+                {new Intl.DateTimeFormat("fr-FR", {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                }).format(props.lastSessionAt)}
+              </time>
             </p>
           ) : null}
         </div>
       </section>
 
-      <section className="space-y-4">
-        <div>
+      <section className="min-w-0 space-y-4">
+        <div className="min-w-0">
           <h2 className="font-display text-lg font-semibold tracking-tight text-[var(--studelio-text)]">
             Tes indicateurs
           </h2>
@@ -151,7 +155,7 @@ export function StudentDashboardView(props: {
         </p>
       </section>
 
-      <section aria-labelledby="quick-links-heading" className="space-y-5">
+      <section aria-labelledby="quick-links-heading" className="min-w-0 space-y-5">
         <StudentDashboardQuickLinks epreuveShortLabel={props.epreuveShortLabel} />
         <StudentDashboardParcoursSnapshot
           competencyScores={props.parcoursCompetencyScores}
@@ -159,7 +163,7 @@ export function StudentDashboardView(props: {
         />
       </section>
 
-      <section className="rounded-[20px] border border-[var(--studelio-border)] bg-card p-5 shadow-[var(--studelio-shadow)] sm:rounded-[24px] sm:p-8">
+      <section className="min-w-0 rounded-[20px] border border-[var(--studelio-border)] bg-card p-5 shadow-[var(--studelio-shadow)] sm:rounded-[24px] sm:p-8">
         <div className="flex min-w-0 items-center gap-2 text-[var(--studelio-text)]">
           <UserRound className="h-5 w-5 shrink-0 text-[var(--studelio-blue)]" aria-hidden />
           <h2 className="min-w-0 font-display text-lg font-semibold">Parent ou tuteur</h2>
@@ -182,27 +186,29 @@ export function StudentDashboardView(props: {
         </div>
       </section>
 
-      <section className="rounded-[20px] border border-[var(--studelio-border)] bg-card p-5 shadow-[var(--studelio-shadow)] sm:rounded-[24px] sm:p-8">
+      <section className="min-w-0 rounded-[20px] border border-[var(--studelio-border)] bg-card p-5 shadow-[var(--studelio-shadow)] sm:rounded-[24px] sm:p-8">
         <div className="flex min-w-0 items-center gap-2 text-[var(--studelio-text)]">
           <CreditCard className="h-5 w-5 shrink-0 text-[var(--studelio-blue)]" aria-hidden />
           <h2 className="min-w-0 font-display text-lg font-semibold">Plan actuel</h2>
         </div>
         {props.planLabelText && props.subStatusText && props.subStatus ? (
-          <dl className="mt-5 grid gap-6 sm:grid-cols-2">
-            <div>
+          <dl className="mt-5 grid min-w-0 gap-6 sm:grid-cols-2">
+            <div className="min-w-0">
               <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Offre</dt>
-              <dd className="mt-1 text-xl font-semibold text-[var(--studelio-text)]">{props.planLabelText}</dd>
+              <dd className="mt-1 break-words text-lg font-semibold text-[var(--studelio-text)] sm:text-xl">
+                {props.planLabelText}
+              </dd>
             </div>
-            <div>
+            <div className="min-w-0">
               <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Statut</dt>
               <dd className="mt-2">
                 <span
                   className={cn(
-                    "inline-flex rounded-full px-3 py-1 text-xs font-semibold",
+                    "inline-flex max-w-full rounded-full px-3 py-1 text-center text-xs font-semibold",
                     subStatusPillClass(props.subStatus),
                   )}
                 >
-                  {props.subStatusText}
+                  <span className="break-words">{props.subStatusText}</span>
                 </span>
               </dd>
             </div>
@@ -215,7 +221,10 @@ export function StudentDashboardView(props: {
         </p>
         <Link
           href="/onboarding/plan"
-          className={cn(buttonVariants({ variant: "outline", size: "sm" }), "mt-5 inline-flex rounded-full")}
+          className={cn(
+            buttonVariants({ variant: "outline", size: "sm" }),
+            "mt-5 inline-flex w-full justify-center rounded-full sm:w-auto",
+          )}
         >
           Voir les plans
         </Link>
