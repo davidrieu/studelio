@@ -259,7 +259,9 @@ export function AndreChat() {
           ) : messages.length === 0 && !streamText ? (
             <p className="text-sm text-[var(--studelio-text-body)]">
               Écris ta première question (ex. : une consigne de français, un passage que tu ne comprends pas, une
-              difficulté en conjugaison…).
+              difficulté en conjugaison…). Si tu colles un texte ou une photo de devoir, indique aussi{" "}
+              <span className="font-medium">ce que tu dois faire exactement</span> (consigne du prof ou du livre) : André
+              t’aiguille sans faire le travail à ta place.
             </p>
           ) : null}
 
@@ -317,7 +319,7 @@ export function AndreChat() {
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Pose ta question à André…"
+              placeholder="Question ou extrait… Si tu colles un texte, précise la consigne du devoir."
               rows={3}
               disabled={sending}
               className={cn(
