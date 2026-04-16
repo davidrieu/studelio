@@ -1,4 +1,3 @@
-import type { ChapterProgressStatus } from "@prisma/client";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -7,10 +6,8 @@ import { auth } from "@/auth";
 import { buttonVariants } from "@/components/ui/button";
 import { StudentProgramme } from "@/components/student-programme";
 import { niveauLabel } from "@/lib/labels";
-import { loadStudentCompetencyScoresSafe } from "@/lib/load-student-competency-scores";
 import { bootstrapGuidedProgressHistoryOnce } from "@/lib/bootstrap-guided-progress-history";
 import { ensureProgrammeStandardModules } from "@/lib/ensure-programme-standard-modules";
-import { findStudentChapterProgressRowsSafe } from "@/lib/load-student-chapter-progress-safe";
 import { prisma } from "@/lib/prisma";
 import { ensureStudentProgrammeLinkedToCanonical } from "@/lib/student-programme-canonical";
 import { cn } from "@/lib/utils";
@@ -112,38 +109,5 @@ export default async function ProgrammePage() {
     );
   }
 
-  const progressRows = hasChapters
-    ? await findStudentChapterProgressRowsSafe(profile.id, chapters.map((c) => c.id))
-    : [];
-
-  const initialChapterProgress: Record<
-    string,
-    { status: ChapterProgressStatus; programmeMetaHits: number }
-  > = {};
-  for (const row of progressRows) {
-    initialChapterProgress[row.chapterId] = {
-      status: row.status,
-      programmeMetaHits: row.programmeMetaHits,
-    };
-  }
-
-  const competencyScores = await loadStudentCompetencyScoresSafe(profile.id);
-
-  return (
-    <StudentProgramme
-      programmeTitle={prog.title}
-      programmeDescription={prog.description}
-      dictations={dictations}
-      chapters={chapters.map((c) => ({
-        id: c.id,
-        order: c.order,
-        title: c.title,
-        description: c.description,
-        objectives: c.objectives,
-        skills: c.skills,
-      }))}
-      initialChapterProgress={initialChapterProgress}
-      competencyScores={competencyScores}
-    />
-  );
+  return <StudentProgramme />;
 }

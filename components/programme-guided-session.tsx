@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChatMarkdown } from "@/components/chat-markdown";
 import { previewWithoutMetaTail } from "@/lib/programme-guided-meta";
+import { emitProgrammeProgressUpdated } from "@/lib/studelio-programme-progress-events";
 import { IconTooltipAction } from "@/components/icon-tooltip-action";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -201,6 +202,9 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
       if (newId) {
         await loadMessages(newId);
       }
+      if (!streamError && (receivedDone || assistant.trim().length > 0)) {
+        emitProgrammeProgressUpdated();
+      }
     } catch {
       setError("Erreur réseau.");
     } finally {
@@ -290,6 +294,7 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
 
       await loadMessages(sessionId);
       if (!streamError && (receivedDone || assistant.trim().length > 0)) {
+        emitProgrammeProgressUpdated();
         router.refresh();
       }
     } catch {

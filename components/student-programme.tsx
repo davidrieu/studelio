@@ -1,9 +1,8 @@
 "use client";
 
-import type { ChapterProgressStatus } from "@prisma/client";
+import type { ChapterProgressStatus, Niveau } from "@prisma/client";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   PolarAngleAxis,
   PolarGrid,
@@ -15,7 +14,7 @@ import {
 import type { DictationRow } from "@/components/programme-dictations";
 import { ProgrammeDictationsSection } from "@/components/programme-dictations";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { chapterProgressLabel } from "@/lib/labels";
+import { chapterProgressLabel, niveauLabel } from "@/lib/labels";
 import type { CompetencyScores } from "@/lib/programme-guided-meta";
 import { moduleProgressPercent } from "@/lib/programme-module-progress";
 import {
@@ -24,7 +23,10 @@ import {
   type ProgrammeChapterForRadar,
   type ProgressByChapter,
 } from "@/lib/programme-radar";
+import type { ProgrammeViewPayload } from "@/lib/student-programme-view-data";
+import { STUDELIO_PROGRAMME_PROGRESS_EVENT } from "@/lib/studelio-programme-progress-events";
 import { cn } from "@/lib/utils";
+import { Loader2, RefreshCw } from "lucide-react";
 
 export type ChapterProgressDetail = {
   status: ChapterProgressStatus;
@@ -37,41 +39,123 @@ type Chapter = ProgrammeChapterForRadar & {
   objectives: string[];
 };
 
-type Props = {
-  programmeTitle: string;
-  programmeDescription: string | null;
-  dictations?: DictationRow[];
-  chapters: Chapter[];
-  /** Progression par module (mise à jour côté serveur après chaque séance programme avec META). */
-  initialChapterProgress: Record<string, ChapterProgressDetail>;
-  /** Scores 0–100 par axe (mis à jour depuis les séances programme avec André). */
-  competencyScores: CompetencyScores | null;
-};
+const EMPTY_CHAPTER_PROGRESS: Record<string, ChapterProgressDetail> = {};
 
-export function StudentProgramme({
-  programmeTitle,
-  programmeDescription,
-  dictations = [],
-  chapters,
-  initialChapterProgress,
-  competencyScores,
-}: Props) {
-  const router = useRouter();
+const RADAR_AXES: { key: keyof CompetencyScores; label: string }[] = [
+  { key: "grammaire", label: "Grammaire" },
+  { key: "orthographe", label: "Orthographe" },
+  { key: "conjugaison", label: "Conjugaison" },
+  { key: "vocabulaire", label: "Vocabulaire" },
+  { key: "expressionEcrite", label: "Expr. écrite" },
+  { key: "lecture", label: "Lecture" },
+];
 
-  /** Recharts (ResponsiveContainer) peut planter au rendu SSR — on n’affiche le radar qu’après hydratation. */
+function formatSyncTime(iso: string): string {
+  try {
+    return new Intl.DateTimeFormat("fr-FR", {
+      dateStyle: "short",
+      timeStyle: "medium",
+    }).format(new Date(iso));
+  } catch {
+    return iso;
+  }
+}
+
+/**
+ * Parcours : données radar + modules rechargées depuis l’API à chaque ouverture,
+ * après chaque message André (événement global), et sur bouton « Recharger ».
+ */
+export function StudentProgramme() {
+  const [payload, setPayload] = useState<ProgrammeViewPayload | null>(null);
+  const [emptyNiveau, setEmptyNiveau] = useState<Niveau | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
   const [radarMounted, setRadarMounted] = useState(false);
   useEffect(() => {
     setRadarMounted(true);
   }, []);
 
-  /** Après une séance programme (autre onglet), le retour ici peut afficher des données figées : on rafraîchit au focus. */
+  const load = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    setEmptyNiveau(null);
+    try {
+      const res = await fetch("/api/student/programme-view", {
+        method: "GET",
+        credentials: "include",
+        cache: "no-store",
+      });
+      const j = (await res.json()) as
+        | ProgrammeViewPayload
+        | { ok: false; code: string; message?: string; niveau?: Niveau };
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          setLoadError("Session expirée — reconnecte-toi.");
+          setPayload(null);
+          return;
+        }
+        setLoadError((j as { message?: string }).message ?? "Erreur de chargement.");
+        setPayload(null);
+        return;
+      }
+
+      if ("ok" in j && j.ok === false) {
+        if (j.code === "no_content") {
+          setPayload(null);
+          setEmptyNiveau(j.niveau ?? null);
+          return;
+        }
+        setLoadError(j.message ?? "Données indisponibles.");
+        setPayload(null);
+        return;
+      }
+
+      if ("ok" in j && j.ok === true) {
+        setPayload(j);
+      }
+    } catch {
+      setLoadError("Réseau indisponible.");
+      setPayload(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    const onVis = () => {
-      if (document.visibilityState === "visible") router.refresh();
+    void load();
+  }, [load]);
+
+  useEffect(() => {
+    const onProgress = () => {
+      void load();
     };
-    document.addEventListener("visibilitychange", onVis);
-    return () => document.removeEventListener("visibilitychange", onVis);
-  }, [router]);
+    window.addEventListener(STUDELIO_PROGRAMME_PROGRESS_EVENT, onProgress);
+    return () => window.removeEventListener(STUDELIO_PROGRAMME_PROGRESS_EVENT, onProgress);
+  }, [load]);
+
+  const initialChapterProgress = useMemo(
+    () => payload?.chapterProgress ?? EMPTY_CHAPTER_PROGRESS,
+    [payload?.chapterProgress],
+  );
+  const competencyScores = payload?.competencyScores ?? null;
+  const chapters: Chapter[] = useMemo(
+    () =>
+      (payload?.chapters ?? []).map((c) => ({
+        id: c.id,
+        order: c.order,
+        title: c.title,
+        description: c.description,
+        objectives: c.objectives,
+        skills: c.skills,
+      })),
+    [payload?.chapters],
+  );
+  const dictations: DictationRow[] = payload?.dictations ?? [];
+  const programmeTitle = payload?.programmeTitle ?? "Programme";
+  const programmeDescription = payload?.programmeDescription ?? null;
+  const updatedAt = payload?.updatedAt;
 
   const progressStatusOnly: ProgressByChapter = useMemo(() => {
     const o: ProgressByChapter = {};
@@ -94,55 +178,128 @@ export function StudentProgramme({
     return initialChapterProgress[id] ?? { status: "NOT_STARTED", programmeMetaHits: 0 };
   }
 
+  const scoreMap = competencyScores ?? {
+    grammaire: 0,
+    orthographe: 0,
+    conjugaison: 0,
+    vocabulaire: 0,
+    expressionEcrite: 0,
+    lecture: 0,
+  };
+
+  if (emptyNiveau && !loading) {
+    return (
+      <div className="rounded-[20px] border border-[var(--studelio-border)] bg-card p-8 shadow-[var(--studelio-shadow)]">
+        <h1 className="font-display text-2xl font-semibold text-[var(--studelio-text)]">Programme personnalisé</h1>
+        <p className="mt-2 max-w-xl text-[var(--studelio-text-body)]">
+          Aucun contenu pour le niveau{" "}
+          <span className="font-medium">{niveauLabel[emptyNiveau]}</span> : il faut au moins des modules (seed) ou des
+          dictées en admin pour ce programme.
+        </p>
+        <Link href="/app/dashboard" className={cn(buttonVariants(), "mt-6 inline-flex rounded-full")}>
+          Retour au tableau de bord
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
-      <section className="rounded-[20px] border-2 border-[var(--studelio-blue)]/25 bg-gradient-to-br from-[var(--studelio-blue-dim)] to-card p-6 shadow-[var(--studelio-shadow)] sm:p-8">
-        <h2 className="font-display text-xl font-semibold text-[var(--studelio-text)]">Séance programme (immersif)</h2>
-        <p className="mt-2 max-w-2xl text-sm text-[var(--studelio-text-body)]">
-          André mène la séance : plan d’exercices selon ton niveau et tes difficultés, difficulté réajustée après chaque
-          réponse. Tu ne choisis pas le thème — tu réponds aux consignes. Le chat « André » du menu reste libre pour tes
-          questions.
-        </p>
-        <Link
-          href="/app/programme/seance"
-          className={cn(buttonVariants(), "mt-5 inline-flex rounded-full")}
-        >
-          Entrer dans la séance
-        </Link>
+      <section className="rounded-[20px] border-2 border-[var(--studelio-blue)]/30 bg-gradient-to-br from-[var(--studelio-blue-dim)]/50 to-card p-6 shadow-[var(--studelio-shadow)] sm:p-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="font-display text-xl font-semibold text-[var(--studelio-text)]">Séance programme</h2>
+            <p className="mt-1 max-w-xl text-sm text-[var(--studelio-text-body)]">
+              Chaque message à André en séance met à jour ton parcours. Reviens ici : les chiffres se rechargent tout
+              seuls après chaque réponse (ou utilise « Recharger »).
+            </p>
+          </div>
+          <Link href="/app/programme/seance" className={cn(buttonVariants(), "inline-flex shrink-0 rounded-full")}>
+            Ouvrir la séance
+          </Link>
+        </div>
       </section>
 
-      <header className="rounded-[20px] border border-[var(--studelio-border)] bg-gradient-to-br from-[var(--studelio-bg-soft)] to-[var(--studelio-bg-muted)] p-6 shadow-[var(--studelio-shadow)] sm:p-8">
-        <h1 className="font-display text-2xl font-semibold text-[var(--studelio-text)]">{programmeTitle}</h1>
-        {programmeDescription ? (
-          <p className="mt-2 max-w-2xl text-sm text-[var(--studelio-text-body)]">{programmeDescription}</p>
-        ) : null}
-        <p className="mt-3 text-sm font-medium text-[var(--studelio-text)]">
+      <section className="overflow-hidden rounded-[24px] border border-[var(--studelio-border)] bg-gradient-to-b from-card to-[var(--studelio-bg-soft)]/30 p-6 shadow-[var(--studelio-shadow)] sm:p-8">
+        <div className="flex flex-col gap-4 border-b border-[var(--studelio-border)]/60 pb-6 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--studelio-blue)]">
+              Progression en direct
+            </p>
+            <h1 className="mt-1 font-display text-2xl font-semibold tracking-tight text-[var(--studelio-text)]">
+              {programmeTitle}
+            </h1>
+            {programmeDescription ?
+              <p className="mt-2 max-w-2xl text-sm text-[var(--studelio-text-body)]">{programmeDescription}</p>
+            : null}
+            <p className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              {updatedAt ?
+                <>
+                  <span>Dernière synchro.</span>
+                  <time className="font-mono text-[var(--studelio-text)]" dateTime={updatedAt}>
+                    {formatSyncTime(updatedAt)}
+                  </time>
+                </>
+              : null}
+              {loading ?
+                <span className="inline-flex items-center gap-1 text-[var(--studelio-blue)]">
+                  <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                  Mise à jour…
+                </span>
+              : null}
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="secondary"
+            className="shrink-0 gap-2 rounded-full"
+            disabled={loading}
+            onClick={() => void load()}
+          >
+            <RefreshCw className={cn("size-4", loading && "animate-spin")} aria-hidden />
+            Recharger les scores
+          </Button>
+        </div>
+
+        {loadError ?
+          <p className="mt-4 text-sm text-destructive" role="alert">
+            {loadError}
+          </p>
+        : null}
+
+        <div className="mt-6">
+          <p className="text-xs font-medium text-muted-foreground">Points radar (0–100)</p>
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+            {RADAR_AXES.map(({ key, label }) => (
+              <div
+                key={key}
+                className="rounded-2xl border border-[var(--studelio-border)] bg-card/80 px-3 py-3 text-center shadow-sm"
+              >
+                <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+                <p className="mt-1 font-display text-2xl font-semibold tabular-nums text-[var(--studelio-blue)]">
+                  {Math.round(scoreMap[key])}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <p className="mt-6 text-sm font-medium text-[var(--studelio-text)]">
           {chapters.length > 0 ?
             <>
               {stats.completed} / {chapters.length} modules terminés ({pctDone}%)
             </>
-          : "Aucun module en base pour l’instant — les dictées ci-dessous restent disponibles."}
+          : "Modules : en attente de contenu en base."}
         </p>
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          <p className="max-w-xl text-xs text-muted-foreground">
-            Les barres et le radar se mettent à jour depuis la séance programme (réponse d’André + bloc technique). Si tu
-            viens de quitter la séance, actualise l’affichage.
-          </p>
-          <Button type="button" variant="outline" size="sm" className="rounded-full text-xs" onClick={() => router.refresh()}>
-            Actualiser progression
-          </Button>
-        </div>
-      </header>
+      </section>
 
       <ProgrammeDictationsSection dictations={dictations} />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-[20px] border border-[var(--studelio-border)] bg-card p-6 shadow-[var(--studelio-shadow)]">
-          <h2 className="font-display text-lg font-semibold text-[var(--studelio-text)]">Radar des compétences</h2>
+          <h2 className="font-display text-lg font-semibold text-[var(--studelio-text)]">Vue radar</h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Chaque axe progresse à <strong>chaque échange</strong> en séance programme (petit bonus), et davantage quand
-            André envoie le bloc <strong>META</strong> en fin de message. Même chose pour les barres des modules à
-            droite : tu vois avancer sans rien cocher à la main.
+            Même donnée que les cartes ci-dessus. Elle se met à jour à chaque rechargement depuis le serveur.
           </p>
           <div className="mt-4 h-[min(22rem,55vw)] w-full min-h-[240px]">
             {radarMounted ?
@@ -170,15 +327,12 @@ export function StudentProgramme({
         <section className="rounded-[20px] border border-[var(--studelio-border)] bg-card p-6 shadow-[var(--studelio-shadow)]">
           <h2 className="font-display text-lg font-semibold text-[var(--studelio-text)]">Modules</h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Les libellés des 6 modules sont toujours ceux du programme Studelio (synchro auto). Progression en petits pas
-            à chaque réponse d’André, plus fort quand le META liste les modules ; un premier passage sur cette page peut
-            rattraper l’historique (anciennes séances).
+            Statut et barre lus en base après chaque réponse d’André (META ou petit bonus automatique).
           </p>
           <ul className="mt-4 space-y-5">
             {chapters.length === 0 ? (
               <li className="rounded-2xl border border-dashed border-[var(--studelio-border)] bg-muted/30 px-4 py-6 text-sm text-muted-foreground">
-                Les modules sont chargés via le seed / la base. Tu peux quand même utiliser les dictées et la séance
-                programme avec André.
+                Pas encore de modules pour ce programme.
               </li>
             ) : null}
             {chapters.map((ch) => {
@@ -196,16 +350,16 @@ export function StudentProgramme({
                           Module {ch.order}
                         </p>
                         <h3 className="font-medium text-[var(--studelio-text)]">{ch.title}</h3>
-                        {ch.description ? (
+                        {ch.description ?
                           <p className="mt-1 text-sm text-[var(--studelio-text-body)]">{ch.description}</p>
-                        ) : null}
-                        {ch.objectives.length > 0 ? (
+                        : null}
+                        {ch.objectives.length > 0 ?
                           <ul className="mt-2 list-inside list-disc text-xs text-muted-foreground">
                             {ch.objectives.map((o) => (
                               <li key={o}>{o}</li>
                             ))}
                           </ul>
-                        ) : null}
+                        : null}
                       </div>
                       <span
                         className={cn(
