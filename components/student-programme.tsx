@@ -16,7 +16,7 @@ import { ProgrammeDictationsSection } from "@/components/programme-dictations";
 import { buttonVariants } from "@/components/ui/button";
 import { chapterProgressLabel } from "@/lib/labels";
 import type { CompetencyScores } from "@/lib/programme-guided-meta";
-import { MODULE_COMPLETION_META_HITS, moduleProgressPercent } from "@/lib/programme-module-progress";
+import { moduleProgressPercent } from "@/lib/programme-module-progress";
 import {
   buildCompetencyRadarChartData,
   countChapterStats,
