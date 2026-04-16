@@ -13,8 +13,8 @@ export default async function ParentDashboardPage() {
       <div className="rounded-[20px] border border-[var(--studelio-border)] bg-card p-8 shadow-[var(--studelio-shadow)]">
         <h1 className="font-display text-2xl font-semibold">Tableau de bord</h1>
         <p className="mt-2 max-w-2xl text-muted-foreground">
-          Vue d’ensemble de la progression des comptes élèves reliés au tien. Les statistiques se mettent à jour lorsque
-          l’élève étudie sur Studelio.
+          Vue d’ensemble des comptes élèves reliés : dernière séance programme, repère radar des compétences, activité.
+          Les données se mettent à jour quand l’élève utilise Studelio.
         </p>
       </div>
 
@@ -29,7 +29,7 @@ export default async function ParentDashboardPage() {
       ) : (
         <div className="space-y-4">
           <div className="flex flex-wrap items-end justify-between gap-3">
-            <h2 className="font-display text-lg font-semibold">Progression par élève</h2>
+            <h2 className="font-display text-lg font-semibold">Suivi par élève</h2>
             <Link
               href="/parent/eleves"
               className="text-sm font-medium text-[var(--studelio-blue)] underline-offset-4 hover:underline"

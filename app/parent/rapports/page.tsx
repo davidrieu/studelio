@@ -13,6 +13,9 @@ export default async function ParentRapportsPage() {
   const totalChat = rows.reduce((a, r) => a + r.chatSessions, 0);
   const totalBlanc = rows.reduce((a, r) => a + r.blancEnrollments, 0);
   const maxStreak = rows.length ? Math.max(...rows.map((r) => r.streakDays)) : 0;
+  const radarVals = rows.map((r) => r.radarMoyenne).filter((x): x is number => x !== null);
+  const radarFamille =
+    radarVals.length > 0 ? Math.round((radarVals.reduce((a, b) => a + b, 0) / radarVals.length) * 10) / 10 : null;
 
   return (
     <div className="space-y-8">
@@ -42,13 +45,29 @@ export default async function ParentRapportsPage() {
             <p className="mt-1 font-display text-3xl font-semibold">{rows.length}</p>
           </div>
           <div className="rounded-[20px] border border-[var(--studelio-border)] bg-card p-6 shadow-[var(--studelio-shadow)]">
-            <p className="text-sm text-muted-foreground">Modules complétés (total)</p>
+            <p className="text-sm text-muted-foreground">Moyenne radar (tous élèves)</p>
             <p className="mt-1 font-display text-3xl font-semibold">
-              {totalChaptersDone}
-              {totalChapters > 0 ? (
-                <span className="text-lg font-normal text-muted-foreground"> / {totalChapters}</span>
-              ) : null}
+              {radarFamille !== null ? (
+                <>
+                  <span className="tabular-nums">{Number.isInteger(radarFamille) ? radarFamille : radarFamille.toFixed(1)}</span>
+                  <span className="text-lg font-normal text-muted-foreground"> %</span>
+                </>
+              ) : (
+                <span className="text-2xl text-muted-foreground">—</span>
+              )}
             </p>
+            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+              Moyenne des six compétences (0–100) sur les élèves qui ont déjà un radar en base. Complété par les séances
+              programme, pas seulement par les modules « terminés ».
+            </p>
+            {totalChapters > 0 ? (
+              <p className="mt-3 border-t border-[var(--studelio-border)]/60 pt-3 text-xs text-muted-foreground">
+                Modules marqués terminés (tous élèves) :{" "}
+                <span className="font-medium text-[var(--studelio-text)]">
+                  {totalChaptersDone} / {totalChapters}
+                </span>
+              </p>
+            ) : null}
           </div>
           <div className="rounded-[20px] border border-[var(--studelio-border)] bg-card p-6 shadow-[var(--studelio-shadow)]">
             <p className="text-sm text-muted-foreground">Temps d’étude cumulé</p>

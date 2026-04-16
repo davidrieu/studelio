@@ -7,15 +7,20 @@ function formatLastSession(d: Date | null) {
   return new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short" }).format(d);
 }
 
+function formatRadarMoyenne(v: number): string {
+  return Number.isInteger(v) ? String(v) : v.toFixed(1);
+}
+
 type Props = { row: ParentChildRow; variant?: "compact" | "full" };
 
 export function ChildProgressCard({ row, variant = "compact" }: Props) {
   const niveau = niveauLabel[row.niveau as Niveau] ?? row.niveau;
   const displayName = row.name?.trim() || row.email;
-  const chapterLine =
+
+  const moduleFootnote =
     row.chaptersTotal > 0
-      ? `${row.chaptersCompleted} / ${row.chaptersTotal} modules complétés`
-      : "Programme non encore associé";
+      ? `${row.chaptersCompleted} module${row.chaptersCompleted > 1 ? "s" : ""} marqué(s) « terminé » sur ${row.chaptersTotal} au parcours (ça avance aussi sans tout cocher).`
+      : "Parcours Studelio : programme pas encore relié ou en cours de configuration.";
 
   return (
     <article
@@ -41,9 +46,39 @@ export function ChildProgressCard({ row, variant = "compact" }: Props) {
         </span>
       </header>
       <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-        <div>
-          <dt className="text-muted-foreground">Progression</dt>
-          <dd className="font-medium">{chapterLine}</dd>
+        <div className="sm:col-span-2">
+          <dt className="text-muted-foreground">Activité sur le programme</dt>
+          <dd className="mt-1 space-y-2 font-medium leading-snug text-[var(--studelio-text-body)]">
+            {row.radarMoyenne !== null ? (
+              <p>
+                <span className="text-[var(--studelio-text)]">Radar des compétences</span> (moyenne des six axes,
+                0–100) : environ <span className="tabular-nums text-[var(--studelio-blue)]">{formatRadarMoyenne(row.radarMoyenne)} %</span> — ce chiffre monte au fil des séances avec André, même sans finir tous les modules.
+              </p>
+            ) : (
+              <p>
+                Le radar des compétences apparaîtra dès que l’élève aura un peu travaillé en{" "}
+                <span className="text-[var(--studelio-text)]">séance programme</span> avec André.
+              </p>
+            )}
+            {row.lastProgrammeSeancePreview ? (
+              <div className="rounded-xl border border-[var(--studelio-border)]/80 bg-[var(--studelio-bg-soft)]/50 px-3 py-2.5 text-sm font-normal text-[var(--studelio-text-body)]">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Dernier message d’André (séance programme)
+                  {row.lastProgrammeSeanceAt ? (
+                    <span className="ml-1 font-normal normal-case text-muted-foreground">
+                      · {formatLastSession(row.lastProgrammeSeanceAt)}
+                    </span>
+                  ) : null}
+                </p>
+                <p className="mt-1.5 text-[var(--studelio-text)]">« {row.lastProgrammeSeancePreview} »</p>
+              </div>
+            ) : row.onboardingDone ? (
+              <p className="text-sm font-normal text-muted-foreground">
+                Pas encore d’échange enregistré en séance programme — dès la prochaine séance, un extrait s’affichera ici.
+              </p>
+            ) : null}
+            <p className="text-xs font-normal leading-relaxed text-muted-foreground">{moduleFootnote}</p>
+          </dd>
         </div>
         <div>
           <dt className="text-muted-foreground">Série (jours)</dt>
