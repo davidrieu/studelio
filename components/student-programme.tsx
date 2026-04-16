@@ -201,29 +201,32 @@ export function StudentProgramme() {
   }
 
   return (
-    <div className="space-y-8">
-      <section className="rounded-[20px] border-2 border-[var(--studelio-blue)]/30 bg-gradient-to-br from-[var(--studelio-blue-dim)]/50 to-card p-6 shadow-[var(--studelio-shadow)] sm:p-8">
+    <div className="space-y-6 sm:space-y-8">
+      <section className="rounded-[18px] border-2 border-[var(--studelio-blue)]/30 bg-gradient-to-br from-[var(--studelio-blue-dim)]/50 to-card p-4 shadow-[var(--studelio-shadow)] sm:rounded-[20px] sm:p-6 md:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="font-display text-xl font-semibold text-[var(--studelio-text)]">Séance programme</h2>
+          <div className="min-w-0">
+            <h2 className="font-display text-lg font-semibold text-[var(--studelio-text)] sm:text-xl">Séance programme</h2>
             <p className="mt-1 max-w-xl text-sm text-[var(--studelio-text-body)]">
               Chaque message à André en séance met à jour ton parcours. Reviens ici : les chiffres se rechargent tout
               seuls après chaque réponse (ou utilise « Recharger »).
             </p>
           </div>
-          <Link href="/app/programme/seance" className={cn(buttonVariants(), "inline-flex shrink-0 rounded-full")}>
+          <Link
+            href="/app/programme/seance"
+            className={cn(buttonVariants(), "inline-flex w-full shrink-0 justify-center rounded-full sm:w-auto")}
+          >
             Ouvrir la séance
           </Link>
         </div>
       </section>
 
-      <section className="overflow-hidden rounded-[24px] border border-[var(--studelio-border)] bg-gradient-to-b from-card to-[var(--studelio-bg-soft)]/30 p-6 shadow-[var(--studelio-shadow)] sm:p-8">
-        <div className="flex flex-col gap-4 border-b border-[var(--studelio-border)]/60 pb-6 sm:flex-row sm:items-start sm:justify-between">
+      <section className="overflow-hidden rounded-[20px] border border-[var(--studelio-border)] bg-gradient-to-b from-card to-[var(--studelio-bg-soft)]/30 p-4 shadow-[var(--studelio-shadow)] sm:rounded-[24px] sm:p-6 md:p-8">
+        <div className="flex flex-col gap-4 border-b border-[var(--studelio-border)]/60 pb-5 sm:flex-row sm:items-start sm:justify-between sm:pb-6">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-wider text-[var(--studelio-blue)]">
               Progression en direct
             </p>
-            <h1 className="mt-1 font-display text-2xl font-semibold tracking-tight text-[var(--studelio-text)]">
+            <h1 className="mt-1 font-display text-xl font-semibold tracking-tight text-[var(--studelio-text)] sm:text-2xl">
               {programmeTitle}
             </h1>
             {programmeDescription ?
@@ -249,7 +252,7 @@ export function StudentProgramme() {
           <Button
             type="button"
             variant="secondary"
-            className="shrink-0 gap-2 rounded-full"
+            className="w-full shrink-0 gap-2 rounded-full sm:w-auto"
             disabled={loading}
             onClick={() => void load()}
           >
@@ -296,7 +299,7 @@ export function StudentProgramme() {
           <p className="mt-1 text-xs text-muted-foreground">
             Même donnée que les cartes ci-dessus. Elle se met à jour à chaque rechargement depuis le serveur.
           </p>
-          <div className="mt-4 h-[min(22rem,55vw)] w-full min-h-[240px]">
+          <div className="mt-4 h-56 w-full min-h-[14rem] sm:h-[min(22rem,55vw)] sm:min-h-[240px]">
             {radarMounted ?
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart cx="50%" cy="50%" outerRadius="72%" data={radarData}>

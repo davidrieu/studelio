@@ -19,7 +19,7 @@ export function ChildProgressCard({ row, variant = "compact" }: Props) {
     <article
       id={`child-${row.userId}`}
       className={cn(
-        "relative overflow-hidden rounded-[22px] border border-[var(--studelio-border)]",
+        "relative min-w-0 overflow-hidden rounded-[22px] border border-[var(--studelio-border)]",
         "bg-gradient-to-b from-card to-[var(--studelio-bg-soft)]/30 p-6 shadow-[var(--studelio-shadow)]",
         "ring-1 ring-transparent transition-shadow duration-300 hover:shadow-lg hover:shadow-[var(--studelio-blue)]/5 hover:ring-[var(--studelio-blue)]/12",
       )}

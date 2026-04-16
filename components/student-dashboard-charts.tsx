@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Bar,
@@ -22,7 +23,8 @@ const CHAT_CAP = 40;
 const BLANC_CAP = 8;
 
 /** Hauteur du tracé (px) ; marges Recharts + padding carte pour les libellés. */
-const CHART_H = 212;
+const CHART_H_DEFAULT = 212;
+const CHART_H_COMPACT = 196;
 
 const springEase = [0.22, 1, 0.36, 1] as const;
 
@@ -94,6 +96,18 @@ export function StudentDashboardCharts(props: {
   blancEnrollmentsCount: number;
   blancAxisLabel: string;
 }) {
+  const [compact, setCompact] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    const apply = () => setCompact(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+
+  const chartH = compact ? CHART_H_COMPACT : CHART_H_DEFAULT;
+  const yAxisWidth = compact ? 78 : 118;
+
   const rows = buildRows(
     props.streakDays,
     props.totalMinutes,
@@ -122,7 +136,7 @@ export function StudentDashboardCharts(props: {
         <p className="relative mt-1 text-[11px] leading-snug text-muted-foreground sm:text-xs">
           Échelle relative (série 14 j., temps 12 h…).
         </p>
-        <div className="relative mt-2 min-h-0 pb-1" style={{ height: CHART_H }}>
+        <div className="relative mt-2 min-h-0 pb-1" style={{ height: chartH }}>
           <ResponsiveContainer width="100%" height="100%">
             <RadarChart
               cx="50%"
@@ -177,13 +191,17 @@ export function StudentDashboardCharts(props: {
         <p className="relative mt-1 text-[11px] leading-snug text-muted-foreground sm:text-xs">
           Survol pour le détail · repères visuels.
         </p>
-        <div className="relative mt-2 min-h-0 pb-1" style={{ height: CHART_H }}>
+        <div className="relative mt-2 min-h-0 pb-1" style={{ height: chartH }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               layout="vertical"
               data={rows}
-              margin={{ top: 4, right: 8, left: 4, bottom: 14 }}
-              barCategoryGap={14}
+              margin={
+                compact ?
+                  { top: 4, right: 4, left: 0, bottom: 12 }
+                : { top: 4, right: 8, left: 4, bottom: 14 }
+              }
+              barCategoryGap={compact ? 12 : 14}
             >
               <defs>
                 {rows.map((r) => (
@@ -199,10 +217,11 @@ export function StudentDashboardCharts(props: {
               <YAxis
                 type="category"
                 dataKey="label"
-                width={118}
-                tick={{ fontSize: 10, fill: "var(--studelio-text-body)" }}
+                width={yAxisWidth}
+                tick={{ fontSize: compact ? 9 : 10, fill: "var(--studelio-text-body)" }}
                 axisLine={false}
                 tickLine={false}
+                tickFormatter={(v) => (typeof v === "string" && v.length > 14 ? `${v.slice(0, 12)}…` : String(v))}
               />
               <Tooltip
                 cursor={{ fill: "var(--studelio-blue-dim)", opacity: 0.4 }}

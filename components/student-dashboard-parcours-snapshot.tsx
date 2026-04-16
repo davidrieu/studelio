@@ -71,7 +71,7 @@ export function StudentDashboardParcoursSnapshot(props: {
       className={cn(
         "relative overflow-hidden rounded-[24px] border border-[var(--studelio-border)]",
         "bg-gradient-to-br from-[var(--studelio-blue-dim)]/45 via-card to-[var(--studelio-bg-soft)]/90",
-        "p-5 shadow-[var(--studelio-shadow)] sm:p-6",
+        "p-4 shadow-[var(--studelio-shadow)] sm:p-6",
       )}
     >
       <div

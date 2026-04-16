@@ -102,7 +102,7 @@ export function StudentDashboardQuickLinks({ epreuveShortLabel }: { epreuveShort
   ];
 
   return (
-    <div className="relative overflow-hidden rounded-[28px] border border-[var(--studelio-border)] bg-gradient-to-br from-[var(--studelio-bg-soft)]/90 via-card to-[var(--studelio-bg-muted)]/40 p-4 shadow-[var(--studelio-shadow)] sm:p-5">
+    <div className="relative overflow-hidden rounded-[24px] border border-[var(--studelio-border)] bg-gradient-to-br from-[var(--studelio-bg-soft)]/90 via-card to-[var(--studelio-bg-muted)]/40 p-4 shadow-[var(--studelio-shadow)] sm:rounded-[28px] sm:p-5">
       <div
         className="pointer-events-none absolute -right-24 top-0 h-48 w-48 rounded-full bg-[var(--studelio-blue)]/[0.08] blur-3xl"
         aria-hidden
@@ -133,7 +133,7 @@ export function StudentDashboardQuickLinks({ epreuveShortLabel }: { epreuveShort
         variants={container}
         initial="hidden"
         animate="show"
-        className="relative grid grid-cols-2 gap-3 sm:gap-4"
+        className="relative grid grid-cols-1 gap-3 min-[380px]:grid-cols-2 sm:gap-4"
       >
         {tiles.map((tile) => {
           const t = themes[tile.id];

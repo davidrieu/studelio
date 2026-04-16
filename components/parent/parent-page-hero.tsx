@@ -15,9 +15,9 @@ export function ParentPageHero({ title, description, backHref, backLabel }: Prop
   return (
     <section
       className={cn(
-        "relative overflow-hidden rounded-[28px] border border-[var(--studelio-border)]",
+        "relative overflow-hidden rounded-[24px] border border-[var(--studelio-border)] sm:rounded-[28px]",
         "bg-gradient-to-br from-[var(--studelio-bg-soft)] via-card to-[var(--studelio-bg-muted)]/80",
-        "p-6 shadow-[var(--studelio-shadow)] sm:p-8",
+        "p-5 shadow-[var(--studelio-shadow)] sm:p-8",
       )}
     >
       <div
@@ -29,11 +29,11 @@ export function ParentPageHero({ title, description, backHref, backLabel }: Prop
         aria-hidden
       />
       <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--studelio-text-muted)]">
             Espace parent
           </p>
-          <h1 className="mt-1 font-display text-2xl font-semibold tracking-tight text-[var(--studelio-text)] sm:text-3xl">
+          <h1 className="mt-1 font-display text-xl font-semibold tracking-tight text-[var(--studelio-text)] sm:text-2xl md:text-3xl">
             {title}
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--studelio-text-body)] sm:text-base">
@@ -43,7 +43,7 @@ export function ParentPageHero({ title, description, backHref, backLabel }: Prop
         {backHref ? (
           <Link
             href={backHref}
-            className="shrink-0 rounded-full border border-[var(--studelio-border)] bg-card/70 px-4 py-2 text-sm font-medium text-[var(--studelio-text-body)] shadow-sm transition-colors hover:border-[var(--studelio-blue)]/25 hover:bg-[var(--studelio-blue-dim)] hover:text-[var(--studelio-text)]"
+            className="inline-flex w-full shrink-0 items-center justify-center rounded-full border border-[var(--studelio-border)] bg-card/70 px-4 py-2.5 text-center text-sm font-medium text-[var(--studelio-text-body)] shadow-sm transition-colors hover:border-[var(--studelio-blue)]/25 hover:bg-[var(--studelio-blue-dim)] hover:text-[var(--studelio-text)] sm:w-auto sm:justify-center sm:py-2"
           >
             {backLabel ?? "← Tableau de bord"}
           </Link>

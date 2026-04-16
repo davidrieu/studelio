@@ -85,9 +85,9 @@ export function StudentDashboardView(props: {
 
       <section
         className={cn(
-          "relative overflow-hidden rounded-[28px] border border-[var(--studelio-border)]",
+          "relative overflow-hidden rounded-[24px] border border-[var(--studelio-border)] sm:rounded-[28px]",
           "bg-gradient-to-br from-[var(--studelio-bg-soft)] via-card to-[var(--studelio-bg-muted)]/80",
-          "p-8 shadow-[var(--studelio-shadow)] sm:p-10",
+          "p-5 shadow-[var(--studelio-shadow)] sm:p-8 md:p-10",
         )}
       >
         <div
@@ -100,10 +100,10 @@ export function StudentDashboardView(props: {
         />
         <div className="relative">
           <p className="text-sm font-medium uppercase tracking-[0.12em] text-[var(--studelio-text-muted)]">{greet}</p>
-          <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight text-[var(--studelio-text)] sm:text-4xl">
+          <h1 className="mt-1 font-display text-2xl font-semibold tracking-tight text-[var(--studelio-text)] sm:text-3xl md:text-4xl">
             {props.firstName}
           </h1>
-          <p className="mt-3 max-w-xl text-base leading-relaxed text-[var(--studelio-text-body)]">
+          <p className="mt-3 max-w-xl text-sm leading-relaxed text-[var(--studelio-text-body)] sm:text-base">
             Niveau <span className="font-semibold text-[var(--studelio-text)]">{props.niveauLabel}</span>
             {props.programmeTitle ? (
               <>
@@ -159,10 +159,10 @@ export function StudentDashboardView(props: {
         />
       </section>
 
-      <section className="rounded-[24px] border border-[var(--studelio-border)] bg-card p-6 shadow-[var(--studelio-shadow)] sm:p-8">
-        <div className="flex items-center gap-2 text-[var(--studelio-text)]">
-          <UserRound className="h-5 w-5 text-[var(--studelio-blue)]" aria-hidden />
-          <h2 className="font-display text-lg font-semibold">Parent ou tuteur</h2>
+      <section className="rounded-[20px] border border-[var(--studelio-border)] bg-card p-5 shadow-[var(--studelio-shadow)] sm:rounded-[24px] sm:p-8">
+        <div className="flex min-w-0 items-center gap-2 text-[var(--studelio-text)]">
+          <UserRound className="h-5 w-5 shrink-0 text-[var(--studelio-blue)]" aria-hidden />
+          <h2 className="min-w-0 font-display text-lg font-semibold">Parent ou tuteur</h2>
         </div>
         {props.parentEmail ? (
           <p className="mt-4 text-sm leading-relaxed text-[var(--studelio-text-body)]">
@@ -182,10 +182,10 @@ export function StudentDashboardView(props: {
         </div>
       </section>
 
-      <section className="rounded-[24px] border border-[var(--studelio-border)] bg-card p-6 shadow-[var(--studelio-shadow)] sm:p-8">
-        <div className="flex items-center gap-2 text-[var(--studelio-text)]">
-          <CreditCard className="h-5 w-5 text-[var(--studelio-blue)]" aria-hidden />
-          <h2 className="font-display text-lg font-semibold">Plan actuel</h2>
+      <section className="rounded-[20px] border border-[var(--studelio-border)] bg-card p-5 shadow-[var(--studelio-shadow)] sm:rounded-[24px] sm:p-8">
+        <div className="flex min-w-0 items-center gap-2 text-[var(--studelio-text)]">
+          <CreditCard className="h-5 w-5 shrink-0 text-[var(--studelio-blue)]" aria-hidden />
+          <h2 className="min-w-0 font-display text-lg font-semibold">Plan actuel</h2>
         </div>
         {props.planLabelText && props.subStatusText && props.subStatus ? (
           <dl className="mt-5 grid gap-6 sm:grid-cols-2">
