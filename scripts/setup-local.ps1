@@ -40,6 +40,7 @@ $envPath = Join-Path (Get-Location) ".env"
 $lines = @(
     "# Genere par scripts/setup-local.ps1 — tu peux modifier",
     "DATABASE_URL=`"$dbUrl`"",
+    "DIRECT_URL=`"$dbUrl`"",
     "AUTH_SECRET=`"$authSecret`"",
     "NEXTAUTH_SECRET=`"$authSecret`"",
     "AUTH_URL=`"http://localhost:3000`"",
