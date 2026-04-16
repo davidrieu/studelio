@@ -10,6 +10,7 @@ import { andreModel, getAnthropic } from "@/lib/anthropic";
 import { formatLoadedFolderForPrompt, loadProgrammeFolderForNiveau } from "@/lib/programme-folder-loader";
 import { niveauLabel } from "@/lib/labels";
 import { applyProgrammeGuidedSessionMeta } from "@/lib/apply-programme-guided-session-meta";
+import { ensureProgrammeStandardModules } from "@/lib/ensure-programme-standard-modules";
 import { findStudentChapterProgressRowsSafe } from "@/lib/load-student-chapter-progress-safe";
 import { prisma } from "@/lib/prisma";
 import { stripProgrammeGuidedMeta } from "@/lib/programme-guided-meta";
@@ -110,6 +111,20 @@ export async function POST(req: Request) {
         },
       },
     });
+  }
+
+  if (programmeForPrompt?.id) {
+    await ensureProgrammeStandardModules(programmeForPrompt.id);
+    const refreshed = await prisma.programme.findUnique({
+      where: { id: programmeForPrompt.id },
+      include: {
+        chapters: {
+          orderBy: { order: "asc" },
+          select: { id: true, order: true, title: true, objectives: true },
+        },
+      },
+    });
+    if (refreshed) programmeForPrompt = refreshed;
   }
 
   const chapterThemes =

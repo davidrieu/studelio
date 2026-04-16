@@ -6,6 +6,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { StudentProgramme } from "@/components/student-programme";
 import { niveauLabel } from "@/lib/labels";
 import { loadStudentCompetencyScoresSafe } from "@/lib/load-student-competency-scores";
+import { ensureProgrammeStandardModules } from "@/lib/ensure-programme-standard-modules";
 import { findStudentChapterProgressRowsSafe } from "@/lib/load-student-chapter-progress-safe";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
@@ -66,8 +67,16 @@ export default async function ProgrammePage() {
   }
 
   const prog = profile.programme;
-  const chapters = prog?.chapters ?? [];
   const dictations = prog?.dictations ?? [];
+
+  let chapters = prog?.chapters ?? [];
+  if (prog?.id) {
+    await ensureProgrammeStandardModules(prog.id);
+    chapters = await prisma.programmeChapter.findMany({
+      where: { programmeId: prog.id },
+      orderBy: { order: "asc" },
+    });
+  }
 
   // Avant : on bloquait toute la page si zéro chapitre → les dictées admin n’apparaissaient jamais.
   const hasChapters = chapters.length > 0;

@@ -1,4 +1,5 @@
 import type { Niveau } from "@prisma/client";
+import { STUDELIO_STANDARD_MODULES_DEF } from "@/lib/studelio-standard-modules";
 
 export type ChapterSeed = {
   order: number;
@@ -16,53 +17,14 @@ export type ProgrammeSeed = {
   chapters: ChapterSeed[];
 };
 
-/**
- * Modules Studelio (radar + barres de progression), alignés sur les libellés META `skills` / `chapters` (ordre 1–6).
- */
-export const STUDELIO_STANDARD_MODULES: ChapterSeed[] = [
-  {
-    order: 1,
-    title: "Module 1 - Grammaire",
-    description: "Maîtriser la structure de la phrase, la nature et les fonctions des mots.",
-    objectives: [],
-    skills: ["Grammaire"],
-  },
-  {
-    order: 2,
-    title: "Module 2 - Orthographe",
-    description: "Bien écrire : l’orthographe courante, les règles d’accord et les homophones.",
-    objectives: [],
-    skills: ["Orthographe"],
-  },
-  {
-    order: 3,
-    title: "Module 3 - Conjugaison",
-    description: "Maîtriser les temps et les modes des verbes.",
-    objectives: [],
-    skills: ["Conjugaison"],
-  },
-  {
-    order: 4,
-    title: "Module 4 - Lecture",
-    description: "Bien lire : Comprendre un texte et repérer l’essentiel.",
-    objectives: [],
-    skills: ["Lecture"],
-  },
-  {
-    order: 5,
-    title: "Module 5 - Expression écrite",
-    description: "Bien argumenter et rédiger un texte cohérent.",
-    objectives: [],
-    skills: ["Expression écrite"],
-  },
-  {
-    order: 6,
-    title: "Module 6 - Vocabulaire",
-    description: "Enrichir son vocabulaire pour comprendre et s’exprimer.",
-    objectives: [],
-    skills: ["Vocabulaire"],
-  },
-];
+/** Même contenu que `lib/studelio-standard-modules.ts` — utilisé au seed. */
+export const STUDELIO_STANDARD_MODULES: ChapterSeed[] = STUDELIO_STANDARD_MODULES_DEF.map((m) => ({
+  order: m.order,
+  title: m.title,
+  description: m.description,
+  objectives: [...m.objectives],
+  skills: [...m.skills],
+}));
 
 /** Contenus de référence (programmes officiels) — seed Prisma uniquement. */
 export const programmeSeeds: ProgrammeSeed[] = [
