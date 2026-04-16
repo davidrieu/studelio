@@ -2,7 +2,7 @@
 
 import type { ChapterProgressStatus } from "@prisma/client";
 import Link from "next/link";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   PolarAngleAxis,
   PolarGrid,
@@ -11,12 +11,12 @@ import {
   RadarChart,
   ResponsiveContainer,
 } from "recharts";
-import { setChapterProgress } from "@/actions/programme";
 import type { DictationRow } from "@/components/programme-dictations";
 import { ProgrammeDictationsSection } from "@/components/programme-dictations";
 import { buttonVariants } from "@/components/ui/button";
 import { chapterProgressLabel } from "@/lib/labels";
 import type { CompetencyScores } from "@/lib/programme-guided-meta";
+import { MODULE_COMPLETION_META_HITS, moduleProgressPercent } from "@/lib/programme-module-progress";
 import {
   buildCompetencyRadarChartData,
   countChapterStats,
@@ -25,7 +25,10 @@ import {
 } from "@/lib/programme-radar";
 import { cn } from "@/lib/utils";
 
-const STATUS_ORDER: ChapterProgressStatus[] = ["NOT_STARTED", "IN_PROGRESS", "COMPLETED"];
+export type ChapterProgressDetail = {
+  status: ChapterProgressStatus;
+  programmeMetaHits: number;
+};
 
 type Chapter = ProgrammeChapterForRadar & {
   order: number;
@@ -38,7 +41,8 @@ type Props = {
   programmeDescription: string | null;
   dictations?: DictationRow[];
   chapters: Chapter[];
-  initialProgress: ProgressByChapter;
+  /** Progression par module (mise à jour côté serveur après chaque séance programme avec META). */
+  initialChapterProgress: Record<string, ChapterProgressDetail>;
   /** Scores 0–100 par axe (mis à jour depuis les séances programme avec André). */
   competencyScores: CompetencyScores | null;
 };
@@ -48,41 +52,34 @@ export function StudentProgramme({
   programmeDescription,
   dictations = [],
   chapters,
-  initialProgress,
+  initialChapterProgress,
   competencyScores,
 }: Props) {
-  const [progress, setProgress] = useState<ProgressByChapter>(initialProgress);
-  const [err, setErr] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
   /** Recharts (ResponsiveContainer) peut planter au rendu SSR — on n’affiche le radar qu’après hydratation. */
   const [radarMounted, setRadarMounted] = useState(false);
   useEffect(() => {
     setRadarMounted(true);
   }, []);
 
+  const progressStatusOnly: ProgressByChapter = useMemo(() => {
+    const o: ProgressByChapter = {};
+    for (const [id, d] of Object.entries(initialChapterProgress)) {
+      o[id] = d.status;
+    }
+    return o;
+  }, [initialChapterProgress]);
+
   const radarData = useMemo(() => buildCompetencyRadarChartData(competencyScores), [competencyScores]);
 
   const stats = useMemo(
-    () => countChapterStats(chapters.map((c) => c.id), progress),
-    [chapters, progress],
+    () => countChapterStats(chapters.map((c) => c.id), progressStatusOnly),
+    [chapters, progressStatusOnly],
   );
 
   const pctDone = chapters.length ? Math.round((stats.completed / chapters.length) * 100) : 0;
 
-  function updateStatus(chapterId: string, status: ChapterProgressStatus) {
-    setErr(null);
-    startTransition(async () => {
-      const r = await setChapterProgress(chapterId, status);
-      if (r.ok) {
-        setProgress((p) => ({ ...p, [chapterId]: status }));
-      } else {
-        setErr(r.message);
-      }
-    });
-  }
-
-  function statusFor(id: string): ChapterProgressStatus {
-    return progress[id] ?? "NOT_STARTED";
+  function detailFor(id: string): ChapterProgressDetail {
+    return initialChapterProgress[id] ?? { status: "NOT_STARTED", programmeMetaHits: 0 };
   }
 
   return (
@@ -110,26 +107,21 @@ export function StudentProgramme({
         <p className="mt-3 text-sm font-medium text-[var(--studelio-text)]">
           {chapters.length > 0 ?
             <>
-              {stats.completed} / {chapters.length} chapitres terminés ({pctDone}%)
+              {stats.completed} / {chapters.length} modules terminés ({pctDone}%)
             </>
-          : "Aucun chapitre en base pour l’instant — les dictées ci-dessous restent disponibles."}
+          : "Aucun module en base pour l’instant — les dictées ci-dessous restent disponibles."}
         </p>
       </header>
 
       <ProgrammeDictationsSection dictations={dictations} />
 
-      {err ? (
-        <p className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-2 text-sm text-destructive">
-          {err}
-        </p>
-      ) : null}
-
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-[20px] border border-[var(--studelio-border)] bg-card p-6 shadow-[var(--studelio-shadow)]">
           <h2 className="font-display text-lg font-semibold text-[var(--studelio-text)]">Radar des compétences</h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Chaque axe progresse quand tu travailles avec André en <strong>séance programme</strong> (il envoie un petit
-            suivi technique en fin de message). Les statuts de chapitres restent ajustables manuellement ci-dessous.
+            Chaque axe progresse quand tu travailles avec André en <strong>séance programme</strong> (META en fin de
+            message). Les <strong>modules</strong> à droite se mettent à jour automatiquement selon ce qu’André indique —
+            tu n’as rien à cocher à la main.
           </p>
           <div className="mt-4 h-[min(22rem,55vw)] w-full min-h-[240px]">
             {radarMounted ?
@@ -155,61 +147,83 @@ export function StudentProgramme({
         </section>
 
         <section className="rounded-[20px] border border-[var(--studelio-border)] bg-card p-6 shadow-[var(--studelio-shadow)]">
-          <h2 className="font-display text-lg font-semibold text-[var(--studelio-text)]">Chapitres</h2>
-          <p className="mt-1 text-xs text-muted-foreground">Indique où tu en es : André s’appuiera sur ton niveau.</p>
-          <ul className="mt-4 space-y-4">
+          <h2 className="font-display text-lg font-semibold text-[var(--studelio-text)]">Modules</h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Statut et barre mis à jour par André après les séances programme (objectif :{" "}
+            {MODULE_COMPLETION_META_HITS} passages en focus pour terminer un module).
+          </p>
+          <ul className="mt-4 space-y-5">
             {chapters.length === 0 ? (
               <li className="rounded-2xl border border-dashed border-[var(--studelio-border)] bg-muted/30 px-4 py-6 text-sm text-muted-foreground">
-                Les chapitres du parcours sont chargés via le seed / la base. Tu peux quand même utiliser les dictées et la
-                séance programme avec André.
+                Les modules sont chargés via le seed / la base. Tu peux quand même utiliser les dictées et la séance
+                programme avec André.
               </li>
             ) : null}
-            {chapters.map((ch) => (
-              <li
-                key={ch.id}
-                className="rounded-2xl border border-[var(--studelio-border)] bg-[var(--studelio-bg-soft)]/40 p-4"
-              >
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Chapitre {ch.order}
-                    </p>
-                    <h3 className="font-medium text-[var(--studelio-text)]">{ch.title}</h3>
-                    {ch.description ? (
-                      <p className="mt-1 text-sm text-[var(--studelio-text-body)]">{ch.description}</p>
-                    ) : null}
-                    {ch.objectives.length > 0 ? (
-                      <ul className="mt-2 list-inside list-disc text-xs text-muted-foreground">
-                        {ch.objectives.map((o) => (
-                          <li key={o}>{o}</li>
-                        ))}
-                      </ul>
-                    ) : null}
-                  </div>
-                  <div className="flex shrink-0 flex-col gap-1 sm:items-end">
-                    <span className="text-xs text-muted-foreground">Statut</span>
-                    <div className="flex flex-wrap gap-1">
-                      {STATUS_ORDER.map((st) => (
-                        <button
-                          key={st}
-                          type="button"
-                          disabled={pending}
-                          onClick={() => updateStatus(ch.id, st)}
+            {chapters.map((ch) => {
+              const d = detailFor(ch.id);
+              const pct = moduleProgressPercent(d.status, d.programmeMetaHits);
+              return (
+                <li
+                  key={ch.id}
+                  className="rounded-2xl border border-[var(--studelio-border)] bg-[var(--studelio-bg-soft)]/40 p-4"
+                >
+                  <div className="flex flex-col gap-3">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                          Module {ch.order}
+                        </p>
+                        <h3 className="font-medium text-[var(--studelio-text)]">{ch.title}</h3>
+                        {ch.description ? (
+                          <p className="mt-1 text-sm text-[var(--studelio-text-body)]">{ch.description}</p>
+                        ) : null}
+                        {ch.objectives.length > 0 ? (
+                          <ul className="mt-2 list-inside list-disc text-xs text-muted-foreground">
+                            {ch.objectives.map((o) => (
+                              <li key={o}>{o}</li>
+                            ))}
+                          </ul>
+                        ) : null}
+                      </div>
+                      <span
+                        className={cn(
+                          "shrink-0 rounded-full px-3 py-1 text-xs font-medium",
+                          d.status === "COMPLETED" ?
+                            "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200"
+                          : d.status === "IN_PROGRESS" ?
+                            "bg-[var(--studelio-blue)]/15 text-[var(--studelio-blue)]"
+                          : "bg-muted text-muted-foreground",
+                        )}
+                      >
+                        {chapterProgressLabel[d.status]}
+                      </span>
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                        <span>Progression</span>
+                        <span className="tabular-nums font-medium text-[var(--studelio-text)]">{pct}%</span>
+                      </div>
+                      <div
+                        className="h-2.5 w-full overflow-hidden rounded-full bg-muted/80 dark:bg-muted/50"
+                        role="progressbar"
+                        aria-valuenow={pct}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-label={`Progression du module ${ch.order}`}
+                      >
+                        <div
                           className={cn(
-                            "rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
-                            statusFor(ch.id) === st
-                              ? "bg-[var(--studelio-blue)] text-primary-foreground"
-                              : "bg-muted text-muted-foreground hover:bg-[var(--studelio-blue-dim)] hover:text-[var(--studelio-text)]",
+                            "h-full rounded-full transition-all duration-500 ease-out",
+                            d.status === "COMPLETED" ? "bg-emerald-500" : "bg-[var(--studelio-blue)]",
                           )}
-                        >
-                          {chapterProgressLabel[st]}
-                        </button>
-                      ))}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         </section>
       </div>

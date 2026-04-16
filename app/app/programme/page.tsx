@@ -78,7 +78,7 @@ export default async function ProgrammePage() {
         <h1 className="font-display text-2xl font-semibold text-[var(--studelio-text)]">Programme personnalisé</h1>
         <p className="mt-2 max-w-xl text-[var(--studelio-text-body)]">
           Aucun contenu pour le niveau <span className="font-medium">{niveauLabel[profile.niveau]}</span> : il faut au
-          moins des chapitres (seed) ou des dictées ajoutées en admin pour le même programme que ton niveau.
+          moins des modules (seed) ou des dictées ajoutées en admin pour le même programme que ton niveau.
         </p>
         <p className="mt-2 max-w-xl text-sm text-muted-foreground">
           Vérifie en admin que la dictée est bien sous le programme qui correspond à ton niveau scolaire (ex. 3e →
@@ -101,9 +101,15 @@ export default async function ProgrammePage() {
       })
     : [];
 
-  const initialProgress: Partial<Record<string, ChapterProgressStatus>> = {};
+  const initialChapterProgress: Record<
+    string,
+    { status: ChapterProgressStatus; programmeMetaHits: number }
+  > = {};
   for (const row of progressRows) {
-    initialProgress[row.chapterId] = row.status;
+    initialChapterProgress[row.chapterId] = {
+      status: row.status,
+      programmeMetaHits: row.programmeMetaHits,
+    };
   }
 
   const competencyScores = await loadStudentCompetencyScoresSafe(profile.id);
@@ -121,7 +127,7 @@ export default async function ProgrammePage() {
         objectives: c.objectives,
         skills: c.skills,
       }))}
-      initialProgress={initialProgress}
+      initialChapterProgress={initialChapterProgress}
       competencyScores={competencyScores}
     />
   );

@@ -42,7 +42,7 @@ export default async function ParentRapportsPage() {
             <p className="mt-1 font-display text-3xl font-semibold">{rows.length}</p>
           </div>
           <div className="rounded-[20px] border border-[var(--studelio-border)] bg-card p-6 shadow-[var(--studelio-shadow)]">
-            <p className="text-sm text-muted-foreground">Chapitres complétés (total)</p>
+            <p className="text-sm text-muted-foreground">Modules complétés (total)</p>
             <p className="mt-1 font-display text-3xl font-semibold">
               {totalChaptersDone}
               {totalChapters > 0 ? (

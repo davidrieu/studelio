@@ -322,6 +322,8 @@ model StudentChapterProgress {
   chapterId        String
   chapter          ProgrammeChapter      @relation(fields: [chapterId], references: [id], onDelete: Cascade)
   status           ChapterProgressStatus @default(NOT_STARTED)
+  /// Incrémenté à chaque META séance programme qui cite ce module (passage auto en cours / terminé).
+  programmeMetaHits Int                  @default(0)
   updatedAt        DateTime              @updatedAt
 
   @@unique([studentProfileId, chapterId])

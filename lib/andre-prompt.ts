@@ -59,10 +59,10 @@ export function buildAndreSystemPrompt(input: {
 - Tu **adaptes** en continu aux **centres d’intérêt**, au **niveau réel** observé dans les échanges et aux **besoins déclarés** (voir plus bas).
 
 ### Contenu du programme (main, corpus, modules — à respecter comme cadre)
-${prog.aiBrief?.trim() || "_Aucun contenu détaillé : utilise les thèmes de chapitres ci-dessous et les attendus du niveau._"}
+${prog.aiBrief?.trim() || "_Aucun contenu détaillé : utilise les thèmes des modules ci-dessous et les attendus du niveau._"}
 
-### Thèmes du parcours (chapitres — repères supplémentaires)
-${prog.chapterThemes.trim() || "_Aucun chapitre listé._"}
+### Thèmes du parcours (modules — repères supplémentaires)
+${prog.chapterThemes.trim() || "_Aucun module listé._"}
 `
     : `## Programme Studelio
 Aucun programme structuré n’est associé : reste sur les **attendus** du niveau **${input.niveauLabel}** et propose des exercices variés en français.`;

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { labelToPrismaField, type ParsedProgrammeGuidedMeta } from "@/lib/programme-guided-meta";
+import { MODULE_COMPLETION_META_HITS } from "@/lib/programme-module-progress";
 
 const SKILL_DELTA = 4;
 
@@ -26,7 +27,7 @@ const ZEROS: Row = {
 };
 
 /**
- * Met à jour les scores radar et passe les chapitres concernés en « en cours » si besoin.
+ * Met à jour les scores radar et la progression des modules (en cours / terminé) selon le META André.
  */
 export async function applyProgrammeGuidedSessionMeta(input: {
   studentProfileId: string;
@@ -88,22 +89,46 @@ export async function applyProgrammeGuidedSessionMeta(input: {
           studentProfileId_chapterId: { studentProfileId, chapterId: chapter.id },
         },
       });
+
       if (!row) {
         await tx.studentChapterProgress.create({
           data: {
             studentProfileId,
             chapterId: chapter.id,
             status: "IN_PROGRESS",
+            programmeMetaHits: 1,
           },
         });
-      } else if (row.status === "NOT_STARTED") {
+        continue;
+      }
+
+      const nextHits = row.programmeMetaHits + 1;
+
+      if (row.status === "NOT_STARTED") {
         await tx.studentChapterProgress.update({
           where: {
             studentProfileId_chapterId: { studentProfileId, chapterId: chapter.id },
           },
-          data: { status: "IN_PROGRESS" },
+          data: { status: "IN_PROGRESS", programmeMetaHits: 1 },
         });
+      } else if (row.status === "IN_PROGRESS") {
+        if (nextHits >= MODULE_COMPLETION_META_HITS) {
+          await tx.studentChapterProgress.update({
+            where: {
+              studentProfileId_chapterId: { studentProfileId, chapterId: chapter.id },
+            },
+            data: { status: "COMPLETED", programmeMetaHits: nextHits },
+          });
+        } else {
+          await tx.studentChapterProgress.update({
+            where: {
+              studentProfileId_chapterId: { studentProfileId, chapterId: chapter.id },
+            },
+            data: { programmeMetaHits: nextHits },
+          });
+        }
       }
+      // COMPLETED : on ne modifie plus (André ne « rouvre » pas un module terminé côté barre)
     }
   });
 }

@@ -264,7 +264,7 @@ export async function POST(req: Request) {
     chapterProgressSummary = programmeForPrompt.chapters
       .map((c) => {
         const st = pmap.get(c.id) ?? "NOT_STARTED";
-        return `- Chapitre ${c.order} — ${c.title} — **${st}**`;
+        return `- Module ${c.order} — ${c.title} — **${st}**`;
       })
       .join("\n");
   }

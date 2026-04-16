@@ -24,8 +24,7 @@ export default async function AdminProgrammesPage() {
       <div>
         <h1 className="font-display text-2xl font-semibold">Programmes par niveau</h1>
         <p className="mt-2 max-w-2xl text-muted-foreground">
-          Les chapitres viennent surtout du seed / contenu fichiers. Les <strong>dictées</strong> (audio + corrigé) se gèrent
-          ici par programme.
+          Les modules viennent surtout du seed. Les <strong>dictées</strong> (audio + corrigé) se gèrent ici par programme.
         </p>
       </div>
 
@@ -40,7 +39,7 @@ export default async function AdminProgrammesPage() {
                 {niveauLabel[p.niveau]} — {p.title}
               </p>
               <p className="text-xs text-muted-foreground">
-                {p._count.chapters} chapitre(s) · {p._count.dictations} dictée(s)
+                {p._count.chapters} module(s) · {p._count.dictations} dictée(s)
               </p>
             </div>
             {isAdmin ? (

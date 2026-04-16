@@ -14,7 +14,7 @@ export function ChildProgressCard({ row, variant = "compact" }: Props) {
   const displayName = row.name?.trim() || row.email;
   const chapterLine =
     row.chaptersTotal > 0
-      ? `${row.chaptersCompleted} / ${row.chaptersTotal} chapitres complétés`
+      ? `${row.chaptersCompleted} / ${row.chaptersTotal} modules complétés`
       : "Programme non encore associé";
 
   return (

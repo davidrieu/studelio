@@ -320,14 +320,14 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
                 <Sparkles className="size-4" />
               </Button>
             </IconTooltipAction>
-            <IconTooltipAction label="Mon parcours (radar & chapitres)">
+            <IconTooltipAction label="Mon parcours (radar & modules)">
               <Link
                 href="/app/programme"
                 className={cn(
                   buttonVariants({ variant: "outline", size: "icon" }),
                   "inline-flex rounded-full text-[var(--studelio-text-body)]",
                 )}
-                aria-label="Mon parcours — radar et chapitres"
+                aria-label="Mon parcours — radar et modules"
               >
                 <BookMarked className="size-4" />
               </Link>

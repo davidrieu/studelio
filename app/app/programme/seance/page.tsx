@@ -53,9 +53,9 @@ export default async function ProgrammeSeancePage() {
     const nMod = folder.modules.length;
     sourceDetail = `le dossier « ${folder.dirName}/ » (programme principal, ${nCorpus} corpus, ${nMod} modules)`;
   } else if (prog?.aiBrief?.trim()) {
-    sourceDetail = "le brief programme en ligne et les chapitres du parcours Studelio";
+    sourceDetail = "le brief programme en ligne et les modules du parcours Studelio";
   } else {
-    sourceDetail = "les chapitres du parcours Studelio et les attendus officiels du niveau";
+    sourceDetail = "les modules du parcours Studelio et les attendus officiels du niveau";
   }
 
   return (
