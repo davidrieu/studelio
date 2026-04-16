@@ -1,6 +1,7 @@
 import type { Niveau } from "@prisma/client";
 import { niveauLabel } from "@/lib/labels";
 import type { ParentChildRow } from "@/lib/parent-dashboard-data";
+import { cn } from "@/lib/utils";
 
 function formatLastSession(d: Date | null) {
   if (!d) return "—";
@@ -17,9 +18,21 @@ export function ChildProgressCard({ row, variant = "compact" }: Props) {
   return (
     <article
       id={`child-${row.userId}`}
-      className="rounded-[20px] border border-[var(--studelio-border)] bg-card p-6 shadow-[var(--studelio-shadow)]"
+      className={cn(
+        "relative overflow-hidden rounded-[22px] border border-[var(--studelio-border)]",
+        "bg-gradient-to-b from-card to-[var(--studelio-bg-soft)]/30 p-6 shadow-[var(--studelio-shadow)]",
+        "ring-1 ring-transparent transition-shadow duration-300 hover:shadow-lg hover:shadow-[var(--studelio-blue)]/5 hover:ring-[var(--studelio-blue)]/12",
+      )}
     >
-      <header className="flex flex-wrap items-start justify-between gap-2 border-b border-[var(--studelio-border)] pb-3">
+      <div
+        className="pointer-events-none absolute -right-12 -top-12 h-32 w-32 rounded-full bg-[var(--studelio-blue)]/[0.06] blur-2xl"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute -bottom-10 -left-8 h-28 w-28 rounded-full bg-violet-500/[0.05] blur-2xl"
+        aria-hidden
+      />
+      <header className="relative flex flex-wrap items-start justify-between gap-2 border-b border-[var(--studelio-border)] pb-3">
         <div>
           <h2 className="font-display text-lg font-semibold text-[var(--studelio-text)]">{displayName}</h2>
           <p className="text-sm text-muted-foreground">
@@ -37,7 +50,7 @@ export function ChildProgressCard({ row, variant = "compact" }: Props) {
           {row.onboardingDone ? "Parcours démarré" : "Onboarding en cours"}
         </span>
       </header>
-      <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+      <dl className="relative mt-4 grid gap-3 text-sm sm:grid-cols-2">
         <div className="sm:col-span-2">
           <dt className="text-muted-foreground">Progression</dt>
           <dd className="mt-2">
@@ -51,7 +64,7 @@ export function ChildProgressCard({ row, variant = "compact" }: Props) {
                 aria-label={`Progression environ ${p} pour cent`}
               >
                 <div
-                  className="h-full rounded-full bg-[var(--studelio-blue)] transition-[width] duration-500 ease-out"
+                  className="h-full rounded-full bg-gradient-to-r from-[var(--studelio-blue)] to-[#2451b0] transition-[width] duration-500 ease-out dark:to-[#3d6fd4]"
                   style={{ width: `${p}%` }}
                 />
               </div>

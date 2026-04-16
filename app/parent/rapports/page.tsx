@@ -1,6 +1,8 @@
-import Link from "next/link";
 import { auth } from "@/auth";
+import { ParentPageHero } from "@/components/parent/parent-page-hero";
+import { ParentStatTile } from "@/components/parent/parent-stat-tile";
 import { getParentChildrenRows } from "@/lib/parent-dashboard-data";
+import { cn } from "@/lib/utils";
 
 export default async function ParentRapportsPage() {
   const session = await auth();
@@ -15,35 +17,34 @@ export default async function ParentRapportsPage() {
     rows.length > 0 ? Math.round(rows.reduce((a, r) => a + r.progressPercent, 0) / rows.length) : 0;
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="font-display text-2xl font-semibold">Rapports</h1>
-          <p className="mt-2 max-w-2xl text-muted-foreground">
-            Synthèse agrégée sur tous les élèves reliés à ton compte.
-          </p>
-        </div>
-        <Link
-          href="/parent/dashboard"
-          className="text-sm font-medium text-[var(--studelio-blue)] underline-offset-4 hover:underline"
-        >
-          ← Tableau de bord
-        </Link>
-      </div>
+    <div className="space-y-10 pb-4">
+      <ParentPageHero
+        title="Rapports"
+        description="Synthèse agrégée sur tous les élèves reliés à ton compte."
+        backHref="/parent/dashboard"
+        backLabel="← Tableau de bord"
+      />
 
       {rows.length === 0 ? (
-        <div className="rounded-[20px] border border-dashed border-[var(--studelio-border)] bg-card/60 p-8 text-center">
-          <p className="text-muted-foreground">Pas encore de données : relie au moins un compte élève.</p>
+        <div
+          className={cn(
+            "relative overflow-hidden rounded-[24px] border border-dashed border-[var(--studelio-border)]",
+            "bg-gradient-to-b from-card/90 to-[var(--studelio-bg-soft)]/40 p-8 text-center shadow-[var(--studelio-shadow)]",
+          )}
+        >
+          <div
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,var(--studelio-blue)_0%,transparent_55%)] opacity-[0.06]"
+            aria-hidden
+          />
+          <p className="relative text-muted-foreground">Pas encore de données : relie au moins un compte élève.</p>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="rounded-[20px] border border-[var(--studelio-border)] bg-card p-6 shadow-[var(--studelio-shadow)]">
-            <p className="text-sm text-muted-foreground">Élèves suivis</p>
-            <p className="mt-1 font-display text-3xl font-semibold">{rows.length}</p>
-          </div>
-          <div className="rounded-[20px] border border-[var(--studelio-border)] bg-card p-6 shadow-[var(--studelio-shadow)] sm:col-span-2 lg:col-span-1">
-            <p className="text-sm text-muted-foreground">Progression moyenne (tous élèves)</p>
-            <div className="mt-3 flex items-center gap-3">
+          <ParentStatTile label="Élèves suivis">
+            <p className="font-display text-3xl font-semibold text-[var(--studelio-text)]">{rows.length}</p>
+          </ParentStatTile>
+          <ParentStatTile label="Progression moyenne (tous élèves)" className="sm:col-span-2 lg:col-span-1">
+            <div className="mt-1 flex items-center gap-3">
               <div
                 className="h-3 min-w-0 flex-1 overflow-hidden rounded-full bg-muted/70 dark:bg-muted/40"
                 role="progressbar"
@@ -52,7 +53,7 @@ export default async function ParentRapportsPage() {
                 aria-valuemax={100}
               >
                 <div
-                  className="h-full rounded-full bg-[var(--studelio-blue)]"
+                  className="h-full rounded-full bg-gradient-to-r from-[var(--studelio-blue)] to-[#2451b0] dark:to-[#3d6fd4]"
                   style={{ width: `${progressionMoyenne}%` }}
                 />
               </div>
@@ -60,23 +61,19 @@ export default async function ParentRapportsPage() {
                 {progressionMoyenne} %
               </span>
             </div>
-          </div>
-          <div className="rounded-[20px] border border-[var(--studelio-border)] bg-card p-6 shadow-[var(--studelio-shadow)]">
-            <p className="text-sm text-muted-foreground">Temps d’étude cumulé</p>
-            <p className="mt-1 font-display text-3xl font-semibold">{totalMinutes} min</p>
-          </div>
-          <div className="rounded-[20px] border border-[var(--studelio-border)] bg-card p-6 shadow-[var(--studelio-shadow)]">
-            <p className="text-sm text-muted-foreground">Meilleure série (jours)</p>
-            <p className="mt-1 font-display text-3xl font-semibold">{maxStreak}</p>
-          </div>
-          <div className="rounded-[20px] border border-[var(--studelio-border)] bg-card p-6 shadow-[var(--studelio-shadow)]">
-            <p className="text-sm text-muted-foreground">Sessions André (total)</p>
-            <p className="mt-1 font-display text-3xl font-semibold">{totalChat}</p>
-          </div>
-          <div className="rounded-[20px] border border-[var(--studelio-border)] bg-card p-6 shadow-[var(--studelio-shadow)]">
-            <p className="text-sm text-muted-foreground">Inscriptions épreuves blanches</p>
-            <p className="mt-1 font-display text-3xl font-semibold">{totalBlanc}</p>
-          </div>
+          </ParentStatTile>
+          <ParentStatTile label="Temps d’étude cumulé">
+            <p className="font-display text-3xl font-semibold text-[var(--studelio-text)]">{totalMinutes} min</p>
+          </ParentStatTile>
+          <ParentStatTile label="Meilleure série (jours)">
+            <p className="font-display text-3xl font-semibold text-[var(--studelio-text)]">{maxStreak}</p>
+          </ParentStatTile>
+          <ParentStatTile label="Sessions André (total)">
+            <p className="font-display text-3xl font-semibold text-[var(--studelio-text)]">{totalChat}</p>
+          </ParentStatTile>
+          <ParentStatTile label="Inscriptions épreuves blanches">
+            <p className="font-display text-3xl font-semibold text-[var(--studelio-text)]">{totalBlanc}</p>
+          </ParentStatTile>
         </div>
       )}
     </div>

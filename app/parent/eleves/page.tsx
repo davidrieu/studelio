@@ -1,7 +1,8 @@
-import Link from "next/link";
 import { auth } from "@/auth";
 import { ChildProgressCard } from "@/components/parent/child-progress-card";
+import { ParentPageHero } from "@/components/parent/parent-page-hero";
 import { getParentChildrenRows } from "@/lib/parent-dashboard-data";
+import { cn } from "@/lib/utils";
 
 export default async function ParentElevesPage() {
   const session = await auth();
@@ -9,25 +10,26 @@ export default async function ParentElevesPage() {
   const rows = userId ? await getParentChildrenRows(userId) : [];
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="font-display text-2xl font-semibold">Élèves</h1>
-          <p className="mt-2 max-w-2xl text-muted-foreground">
-            Détail des comptes reliés : progression, temps passé et usage d’André.
-          </p>
-        </div>
-        <Link
-          href="/parent/dashboard"
-          className="text-sm font-medium text-[var(--studelio-blue)] underline-offset-4 hover:underline"
-        >
-          ← Tableau de bord
-        </Link>
-      </div>
+    <div className="space-y-10 pb-4">
+      <ParentPageHero
+        title="Élèves"
+        description="Détail des comptes reliés : progression, temps passé et usage d’André."
+        backHref="/parent/dashboard"
+        backLabel="← Tableau de bord"
+      />
 
       {rows.length === 0 ? (
-        <div className="rounded-[20px] border border-dashed border-[var(--studelio-border)] bg-card/60 p-8 text-center">
-          <p className="text-muted-foreground">
+        <div
+          className={cn(
+            "relative overflow-hidden rounded-[24px] border border-dashed border-[var(--studelio-border)]",
+            "bg-gradient-to-b from-card/90 to-[var(--studelio-bg-soft)]/40 p-8 text-center shadow-[var(--studelio-shadow)]",
+          )}
+        >
+          <div
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,var(--studelio-blue)_0%,transparent_55%)] opacity-[0.06]"
+            aria-hidden
+          />
+          <p className="relative text-muted-foreground">
             Aucun élève relié. L’élève doit t’associer depuis son tableau de bord (section parent / tuteur) après
             l’onboarding.
           </p>
