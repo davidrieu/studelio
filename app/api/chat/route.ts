@@ -10,6 +10,7 @@ import { andreModel, getAnthropic } from "@/lib/anthropic";
 import { formatLoadedFolderForPrompt, loadProgrammeFolderForNiveau } from "@/lib/programme-folder-loader";
 import { niveauLabel } from "@/lib/labels";
 import { applyProgrammeGuidedSessionMeta } from "@/lib/apply-programme-guided-session-meta";
+import { findStudentChapterProgressRowsSafe } from "@/lib/load-student-chapter-progress-safe";
 import { prisma } from "@/lib/prisma";
 import { stripProgrammeGuidedMeta } from "@/lib/programme-guided-meta";
 import { MINUTES_PER_CHAT_ROUND, recordStudentActivity } from "@/lib/record-student-activity";
@@ -254,12 +255,10 @@ export async function POST(req: Request) {
 
   let chapterProgressSummary = "";
   if (isGuided && programmeForPrompt?.chapters?.length && !isDictee) {
-    const progressRows = await prisma.studentChapterProgress.findMany({
-      where: {
-        studentProfileId: sp.id,
-        chapterId: { in: programmeForPrompt.chapters.map((c) => c.id) },
-      },
-    });
+    const progressRows = await findStudentChapterProgressRowsSafe(
+      sp.id,
+      programmeForPrompt.chapters.map((c) => c.id),
+    );
     const pmap = new Map(progressRows.map((r) => [r.chapterId, r.status]));
     chapterProgressSummary = programmeForPrompt.chapters
       .map((c) => {

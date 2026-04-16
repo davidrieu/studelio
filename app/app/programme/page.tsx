@@ -6,6 +6,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { StudentProgramme } from "@/components/student-programme";
 import { niveauLabel } from "@/lib/labels";
 import { loadStudentCompetencyScoresSafe } from "@/lib/load-student-competency-scores";
+import { findStudentChapterProgressRowsSafe } from "@/lib/load-student-chapter-progress-safe";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
 
@@ -91,14 +92,8 @@ export default async function ProgrammePage() {
     );
   }
 
-  const progressRows =
-    hasChapters ?
-      await prisma.studentChapterProgress.findMany({
-        where: {
-          studentProfileId: profile.id,
-          chapterId: { in: chapters.map((c) => c.id) },
-        },
-      })
+  const progressRows = hasChapters
+    ? await findStudentChapterProgressRowsSafe(profile.id, chapters.map((c) => c.id))
     : [];
 
   const initialChapterProgress: Record<
