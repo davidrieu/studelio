@@ -12,6 +12,7 @@ import { bootstrapGuidedProgressHistoryOnce } from "@/lib/bootstrap-guided-progr
 import { ensureProgrammeStandardModules } from "@/lib/ensure-programme-standard-modules";
 import { findStudentChapterProgressRowsSafe } from "@/lib/load-student-chapter-progress-safe";
 import { prisma } from "@/lib/prisma";
+import { ensureStudentProgrammeLinkedToCanonical } from "@/lib/student-programme-canonical";
 import { cn } from "@/lib/utils";
 
 export default async function ProgrammePage() {
@@ -39,30 +40,28 @@ export default async function ProgrammePage() {
     redirect("/onboarding");
   }
 
-  if (!profile.programmeId) {
-    const match = await prisma.programme.findUnique({
-      where: { niveau: profile.niveau },
-    });
-    if (match) {
-      await prisma.studentProfile.update({
-        where: { id: profile.id },
-        data: { programmeId: match.id },
-      });
-      profile = await prisma.studentProfile.findUnique({
-        where: { userId: session.user.id },
-        include: {
-          programme: {
-            include: {
-              chapters: { orderBy: { order: "asc" } },
-              dictations: {
-                orderBy: { order: "asc" },
-                select: { id: true, title: true, audioUrl: true, order: true },
-              },
+  const hadNoProgrammeLink = !profile.programmeId;
+  await ensureStudentProgrammeLinkedToCanonical({
+    studentProfileId: profile.id,
+    niveau: profile.niveau,
+    programmeIdOnProfile: profile.programmeId,
+    programmeRelationId: profile.programme?.id ?? null,
+  });
+  if (hadNoProgrammeLink) {
+    profile = await prisma.studentProfile.findUnique({
+      where: { userId: session.user.id },
+      include: {
+        programme: {
+          include: {
+            chapters: { orderBy: { order: "asc" } },
+            dictations: {
+              orderBy: { order: "asc" },
+              select: { id: true, title: true, audioUrl: true, order: true },
             },
           },
         },
-      });
-    }
+      },
+    });
   }
 
   if (!profile) {

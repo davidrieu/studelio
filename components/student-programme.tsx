@@ -2,6 +2,7 @@
 
 import type { ChapterProgressStatus } from "@prisma/client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
   PolarAngleAxis,
@@ -13,7 +14,7 @@ import {
 } from "recharts";
 import type { DictationRow } from "@/components/programme-dictations";
 import { ProgrammeDictationsSection } from "@/components/programme-dictations";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { chapterProgressLabel } from "@/lib/labels";
 import type { CompetencyScores } from "@/lib/programme-guided-meta";
 import { moduleProgressPercent } from "@/lib/programme-module-progress";
@@ -55,11 +56,22 @@ export function StudentProgramme({
   initialChapterProgress,
   competencyScores,
 }: Props) {
+  const router = useRouter();
+
   /** Recharts (ResponsiveContainer) peut planter au rendu SSR — on n’affiche le radar qu’après hydratation. */
   const [radarMounted, setRadarMounted] = useState(false);
   useEffect(() => {
     setRadarMounted(true);
   }, []);
+
+  /** Après une séance programme (autre onglet), le retour ici peut afficher des données figées : on rafraîchit au focus. */
+  useEffect(() => {
+    const onVis = () => {
+      if (document.visibilityState === "visible") router.refresh();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [router]);
 
   const progressStatusOnly: ProgressByChapter = useMemo(() => {
     const o: ProgressByChapter = {};
@@ -111,6 +123,15 @@ export function StudentProgramme({
             </>
           : "Aucun module en base pour l’instant — les dictées ci-dessous restent disponibles."}
         </p>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <p className="max-w-xl text-xs text-muted-foreground">
+            Les barres et le radar se mettent à jour depuis la séance programme (réponse d’André + bloc technique). Si tu
+            viens de quitter la séance, actualise l’affichage.
+          </p>
+          <Button type="button" variant="outline" size="sm" className="rounded-full text-xs" onClick={() => router.refresh()}>
+            Actualiser progression
+          </Button>
+        </div>
       </header>
 
       <ProgrammeDictationsSection dictations={dictations} />

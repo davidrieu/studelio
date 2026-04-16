@@ -1,7 +1,6 @@
 import type { MessageParam, TextBlock } from "@anthropic-ai/sdk/resources/messages";
 import type { ChatSessionKind } from "@prisma/client";
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { buildDicteeSystemPrompt } from "@/lib/andre-prompt-dictee";
 import { buildProgrammeGuidedSystemPrompt } from "@/lib/andre-prompt-guided";
@@ -9,13 +8,15 @@ import { buildAndreSystemPrompt } from "@/lib/andre-prompt";
 import { andreModel, getAnthropic } from "@/lib/anthropic";
 import { formatLoadedFolderForPrompt, loadProgrammeFolderForNiveau } from "@/lib/programme-folder-loader";
 import { niveauLabel } from "@/lib/labels";
-import { applyProgrammeGuidedSessionMeta } from "@/lib/apply-programme-guided-session-meta";
-import { bumpProgrammeGuidedMicroProgress } from "@/lib/bump-programme-guided-micro-progress";
 import { ensureProgrammeStandardModules } from "@/lib/ensure-programme-standard-modules";
+import {
+  persistProgrammeGuidedProgressTurn,
+  revalidateProgrammeProgressViews,
+} from "@/lib/persist-programme-guided-progress";
 import { findStudentChapterProgressRowsSafe } from "@/lib/load-student-chapter-progress-safe";
 import { prisma } from "@/lib/prisma";
 import { stripProgrammeGuidedMeta } from "@/lib/programme-guided-meta";
-import { studelioProgressHintMeta, studelioProgressHintMicro } from "@/lib/studelio-progress-user-hint";
+import { ensureStudentProgrammeLinkedToCanonical } from "@/lib/student-programme-canonical";
 import { MINUTES_PER_CHAT_ROUND, recordStudentActivity } from "@/lib/record-student-activity";
 
 export const dynamic = "force-dynamic";
@@ -127,6 +128,41 @@ export async function POST(req: Request) {
       },
     });
     if (refreshed) programmeForPrompt = refreshed;
+  }
+
+  /** Même programme que la page Parcours (barres / radar) — lie le profil si besoin, resynchronise le contexte prompt. */
+  let canonicalProgrammeIdForGuided: string | null = null;
+  if (isGuided) {
+    canonicalProgrammeIdForGuided = await ensureStudentProgrammeLinkedToCanonical({
+      studentProfileId: sp.id,
+      niveau: sp.niveau,
+      programmeIdOnProfile: sp.programmeId,
+      programmeRelationId: sp.programme?.id ?? null,
+    });
+    if (canonicalProgrammeIdForGuided && programmeForPrompt?.id !== canonicalProgrammeIdForGuided) {
+      const synced = await prisma.programme.findUnique({
+        where: { id: canonicalProgrammeIdForGuided },
+        include: {
+          chapters: {
+            orderBy: { order: "asc" },
+            select: { id: true, order: true, title: true, objectives: true },
+          },
+        },
+      });
+      if (synced) {
+        await ensureProgrammeStandardModules(synced.id);
+        programmeForPrompt =
+          (await prisma.programme.findUnique({
+            where: { id: synced.id },
+            include: {
+              chapters: {
+                orderBy: { order: "asc" },
+                select: { id: true, order: true, title: true, objectives: true },
+              },
+            },
+          })) ?? synced;
+      }
+    }
   }
 
   const chapterThemes =
@@ -434,27 +470,16 @@ export async function POST(req: Request) {
           },
         });
 
-        const programmeIdForMeta = sp.programmeId ?? programmeForPrompt?.id ?? null;
         let studelioProgressHint: string | null = null;
-        if (isGuided && programmeIdForMeta) {
-          await ensureProgrammeStandardModules(programmeIdForMeta);
+        if (isGuided && canonicalProgrammeIdForGuided) {
           try {
-            if (strippedGuided?.meta) {
-              await applyProgrammeGuidedSessionMeta({
-                studentProfileId: sp.id,
-                programmeId: programmeIdForMeta,
-                meta: strippedGuided.meta,
-              });
-              studelioProgressHint = studelioProgressHintMeta(strippedGuided.meta);
-            } else {
-              await bumpProgrammeGuidedMicroProgress({
-                studentProfileId: sp.id,
-                programmeId: programmeIdForMeta,
-              });
-              studelioProgressHint = studelioProgressHintMicro();
-            }
-            revalidatePath("/app/programme");
-            revalidatePath("/app/programme/seance");
+            const out = await persistProgrammeGuidedProgressTurn({
+              studentProfileId: sp.id,
+              programmeId: canonicalProgrammeIdForGuided,
+              assistantText,
+            });
+            studelioProgressHint = out.studelioProgressHint;
+            revalidateProgrammeProgressViews();
           } catch (e) {
             console.error("[chat] programme guided progress", e);
           }
