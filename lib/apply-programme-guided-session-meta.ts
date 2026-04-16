@@ -38,7 +38,8 @@ export async function applyProgrammeGuidedSessionMeta(input: {
 }): Promise<void> {
   const { studentProfileId, programmeId, meta } = input;
 
-  await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(
+    async (tx) => {
     if (meta.skills.length > 0) {
       const existing = await tx.studentCompetencyProgress.findUnique({
         where: { studentProfileId },
@@ -135,5 +136,7 @@ export async function applyProgrammeGuidedSessionMeta(input: {
       }
       // COMPLETED : on ne modifie plus (André ne « rouvre » pas un module terminé côté barre)
     }
-  });
+  },
+    { maxWait: 10_000, timeout: 20_000 },
+  );
 }

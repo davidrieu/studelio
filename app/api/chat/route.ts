@@ -1,5 +1,6 @@
 import type { MessageParam, TextBlock } from "@anthropic-ai/sdk/resources/messages";
 import type { ChatSessionKind } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { buildDicteeSystemPrompt } from "@/lib/andre-prompt-dictee";
@@ -490,9 +491,17 @@ export async function POST(req: Request) {
               });
               studelioProgressHint = out.studelioProgressHint;
               studelioProgressDelta = out.studelioProgressDelta;
-              revalidateProgrammeProgressViews();
+              try {
+                revalidateProgrammeProgressViews();
+              } catch (revErr) {
+                console.error(
+                  "[chat] revalidatePath Parcours ignorée (souvent indisponible depuis un Route Handler — le client recharge via l’API)",
+                  revErr,
+                );
+              }
             } catch (e) {
-              console.error("[chat] programme guided progress", e);
+              const code = e instanceof Prisma.PrismaClientKnownRequestError ? e.code : undefined;
+              console.error("[chat] programme guided progress", e, code ? `[Prisma ${code}]` : "");
               studelioProgressHint =
                 "Parcours : la mise à jour n’a pas pu s’enregistrer (erreur serveur). Réessaie dans un instant ou ouvre « Parcours » et clique « Recharger les scores ».";
             }

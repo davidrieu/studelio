@@ -37,7 +37,8 @@ export async function bumpProgrammeGuidedMicroProgress(input: {
 }): Promise<void> {
   const { studentProfileId, programmeId } = input;
 
-  await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(
+    async (tx) => {
     const existing = await tx.studentCompetencyProgress.findUnique({
       where: { studentProfileId },
     });
@@ -164,5 +165,7 @@ export async function bumpProgrammeGuidedMicroProgress(input: {
         break;
       }
     }
-  });
+  },
+    { maxWait: 10_000, timeout: 20_000 },
+  );
 }

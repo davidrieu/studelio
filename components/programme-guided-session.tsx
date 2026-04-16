@@ -1,6 +1,6 @@
 "use client";
 
-import { BookMarked, Info, MessageCircle, Sparkles, TrendingUp } from "lucide-react";
+import { AlertCircle, BookMarked, Info, MessageCircle, Sparkles, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -142,6 +142,29 @@ function deltaKindLabel(kind: StudelioProgressDeltaPayload["kind"]): string {
   if (kind === "micro") return "Auto";
   if (kind === "prose") return "Texte";
   return "META";
+}
+
+/** Encart Parcours : vert = OK, ambre = avertissement, rouge = échec enregistrement. */
+function parcoursHintTone(h: string): "success" | "error" | "warning" {
+  const t = h.toLowerCase();
+  if (
+    t.includes("pas pu") ||
+    t.includes("erreur serveur") ||
+    t.includes("impossible de") ||
+    (t.includes("introuvable") && t.includes("parcours"))
+  ) {
+    return "error";
+  }
+  if (
+    t.includes("ne peut pas") ||
+    t.includes("non relié") ||
+    t.includes("n'est pas relié") ||
+    t.includes("n’est pas relié") ||
+    t.includes("aucun programme")
+  ) {
+    return "warning";
+  }
+  return "success";
 }
 
 export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
@@ -538,24 +561,45 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
         ) : null}
 
         {progressHint ? (
-          <div
-            className="flex items-start gap-3 border-t border-emerald-500/40 bg-emerald-500/15 px-4 py-3 sm:px-8 dark:bg-emerald-950/45"
-            role="status"
-          >
-            <TrendingUp className="mt-0.5 size-4 shrink-0 text-emerald-700 dark:text-emerald-300" aria-hidden />
-            <p className="min-w-0 flex-1 text-sm font-medium leading-snug text-emerald-950 dark:text-emerald-50">
-              {progressHint}
-            </p>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 shrink-0 px-2 text-xs"
-              onClick={() => setProgressHint(null)}
-            >
-              Fermer
-            </Button>
-          </div>
+          (() => {
+            const tone = parcoursHintTone(progressHint);
+            return (
+              <div
+                className={cn(
+                  "flex items-start gap-3 border-t px-4 py-3 sm:px-8",
+                  tone === "success" &&
+                    "border-emerald-500/40 bg-emerald-500/15 dark:bg-emerald-950/45 [&_p]:text-emerald-950 dark:[&_p]:text-emerald-50",
+                  tone === "warning" &&
+                    "border-amber-500/40 bg-amber-500/12 dark:bg-amber-950/35 [&_p]:text-amber-950 dark:[&_p]:text-amber-50",
+                  tone === "error" &&
+                    "border-destructive/35 bg-destructive/10 dark:bg-destructive/15 [&_p]:text-destructive dark:[&_p]:text-red-100",
+                )}
+                role={tone === "error" ? "alert" : "status"}
+              >
+                {tone === "error" ? (
+                  <AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden />
+                ) : (
+                  <TrendingUp
+                    className={cn(
+                      "mt-0.5 size-4 shrink-0",
+                      tone === "warning" ? "text-amber-700 dark:text-amber-300" : "text-emerald-700 dark:text-emerald-300",
+                    )}
+                    aria-hidden
+                  />
+                )}
+                <p className="min-w-0 flex-1 text-sm font-medium leading-snug">{progressHint}</p>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 shrink-0 px-2 text-xs"
+                  onClick={() => setProgressHint(null)}
+                >
+                  Fermer
+                </Button>
+              </div>
+            );
+          })()
         ) : null}
 
         {showProgrammeChoices ? (
