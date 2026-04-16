@@ -5,7 +5,7 @@ import { auth } from "@/auth";
 import { buttonVariants } from "@/components/ui/button";
 import { StudentProgramme } from "@/components/student-programme";
 import { niveauLabel } from "@/lib/labels";
-import type { CompetencyScores } from "@/lib/programme-guided-meta";
+import { loadStudentCompetencyScoresSafe } from "@/lib/load-student-competency-scores";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
 
@@ -106,19 +106,7 @@ export default async function ProgrammePage() {
     initialProgress[row.chapterId] = row.status;
   }
 
-  const competencyRow = await prisma.studentCompetencyProgress.findUnique({
-    where: { studentProfileId: profile.id },
-  });
-  const competencyScores: CompetencyScores | null = competencyRow
-    ? {
-        grammaire: competencyRow.grammaire,
-        orthographe: competencyRow.orthographe,
-        conjugaison: competencyRow.conjugaison,
-        vocabulaire: competencyRow.vocabulaire,
-        expressionEcrite: competencyRow.expressionEcrite,
-        lecture: competencyRow.lecture,
-      }
-    : null;
+  const competencyScores = await loadStudentCompetencyScoresSafe(profile.id);
 
   return (
     <StudentProgramme

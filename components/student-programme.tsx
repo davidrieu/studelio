@@ -2,7 +2,7 @@
 
 import type { ChapterProgressStatus } from "@prisma/client";
 import Link from "next/link";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import {
   PolarAngleAxis,
   PolarGrid,
@@ -54,6 +54,11 @@ export function StudentProgramme({
   const [progress, setProgress] = useState<ProgressByChapter>(initialProgress);
   const [err, setErr] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  /** Recharts (ResponsiveContainer) peut planter au rendu SSR — on n’affiche le radar qu’après hydratation. */
+  const [radarMounted, setRadarMounted] = useState(false);
+  useEffect(() => {
+    setRadarMounted(true);
+  }, []);
 
   const radarData = useMemo(() => buildCompetencyRadarChartData(competencyScores), [competencyScores]);
 
@@ -127,20 +132,25 @@ export function StudentProgramme({
             suivi technique en fin de message). Les statuts de chapitres restent ajustables manuellement ci-dessous.
           </p>
           <div className="mt-4 h-[min(22rem,55vw)] w-full min-h-[240px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <RadarChart cx="50%" cy="50%" outerRadius="72%" data={radarData}>
-                <PolarGrid stroke="var(--studelio-border)" />
-                <PolarAngleAxis dataKey="subject" tick={{ fill: "var(--studelio-text-body)", fontSize: 10 }} />
-                <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
-                <Radar
-                  name="Progression"
-                  dataKey="value"
-                  stroke="var(--studelio-blue)"
-                  fill="var(--studelio-blue)"
-                  fillOpacity={0.35}
-                />
-              </RadarChart>
-            </ResponsiveContainer>
+            {radarMounted ?
+              <ResponsiveContainer width="100%" height="100%">
+                <RadarChart cx="50%" cy="50%" outerRadius="72%" data={radarData}>
+                  <PolarGrid stroke="var(--studelio-border)" />
+                  <PolarAngleAxis dataKey="subject" tick={{ fill: "var(--studelio-text-body)", fontSize: 10 }} />
+                  <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
+                  <Radar
+                    name="Progression"
+                    dataKey="value"
+                    stroke="var(--studelio-blue)"
+                    fill="var(--studelio-blue)"
+                    fillOpacity={0.35}
+                  />
+                </RadarChart>
+              </ResponsiveContainer>
+            : <div className="flex h-full min-h-[240px] items-center justify-center rounded-xl bg-muted/30 text-sm text-muted-foreground">
+                Chargement du graphique…
+              </div>
+            }
           </div>
         </section>
 
