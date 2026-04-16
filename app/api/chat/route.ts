@@ -15,6 +15,7 @@ import { ensureProgrammeStandardModules } from "@/lib/ensure-programme-standard-
 import { findStudentChapterProgressRowsSafe } from "@/lib/load-student-chapter-progress-safe";
 import { prisma } from "@/lib/prisma";
 import { stripProgrammeGuidedMeta } from "@/lib/programme-guided-meta";
+import { studelioProgressHintMeta, studelioProgressHintMicro } from "@/lib/studelio-progress-user-hint";
 import { MINUTES_PER_CHAT_ROUND, recordStudentActivity } from "@/lib/record-student-activity";
 
 export const dynamic = "force-dynamic";
@@ -434,6 +435,7 @@ export async function POST(req: Request) {
         });
 
         const programmeIdForMeta = sp.programmeId ?? programmeForPrompt?.id ?? null;
+        let studelioProgressHint: string | null = null;
         if (isGuided && programmeIdForMeta) {
           try {
             if (strippedGuided?.meta) {
@@ -442,11 +444,13 @@ export async function POST(req: Request) {
                 programmeId: programmeIdForMeta,
                 meta: strippedGuided.meta,
               });
+              studelioProgressHint = studelioProgressHintMeta(strippedGuided.meta);
             } else {
               await bumpProgrammeGuidedMicroProgress({
                 studentProfileId: sp.id,
                 programmeId: programmeIdForMeta,
               });
+              studelioProgressHint = studelioProgressHintMicro();
             }
             revalidatePath("/app/programme");
             revalidatePath("/app/programme/seance");
@@ -468,6 +472,7 @@ export async function POST(req: Request) {
             input: final.usage?.input_tokens ?? null,
             output: final.usage?.output_tokens ?? null,
           },
+          ...(studelioProgressHint ? { studelioProgressHint } : {}),
         });
       } catch (e) {
         console.error("[chat]", e);

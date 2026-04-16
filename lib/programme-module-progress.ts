@@ -16,6 +16,12 @@ export const MODULE_MICRO_BUMP_PER_EXCHANGE = 4;
 /** Avec META : bonus par numéro de module cité dans le JSON. */
 export const MODULE_META_BUMP_PER_CHAPTER = 12;
 
+/** Sans META : points radar ajoutés sur chaque axe à chaque échange. */
+export const RADAR_MICRO_PER_AXIS_EXCHANGE = 2;
+
+/** Avec META : points radar ajoutés par compétence citée dans le JSON. */
+export const RADAR_META_SKILL_DELTA = 10;
+
 export function moduleProgressPercent(status: ChapterProgressStatus, programmeMetaHits: number): number {
   if (status === "COMPLETED") return 100;
   if (status === "NOT_STARTED") return 0;

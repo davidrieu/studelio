@@ -3,10 +3,8 @@ import { labelToPrismaField, type ParsedProgrammeGuidedMeta } from "@/lib/progra
 import {
   MODULE_COMPLETION_UNITS,
   MODULE_META_BUMP_PER_CHAPTER,
+  RADAR_META_SKILL_DELTA,
 } from "@/lib/programme-module-progress";
-
-/** Points radar par compétence citée dans un META (visible dès les premières séances). */
-const SKILL_DELTA = 10;
 
 function clamp100(n: number): number {
   return Math.min(100, Math.max(0, Math.round(n)));
@@ -57,7 +55,7 @@ export async function applyProgrammeGuidedSessionMeta(input: {
         : { ...ZEROS };
       for (const lab of meta.skills) {
         const field = labelToPrismaField(lab);
-        cur[field] = clamp100(cur[field] + SKILL_DELTA);
+        cur[field] = clamp100(cur[field] + RADAR_META_SKILL_DELTA);
       }
       await tx.studentCompetencyProgress.upsert({
         where: { studentProfileId },

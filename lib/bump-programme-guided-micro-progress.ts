@@ -2,10 +2,8 @@ import { prisma } from "@/lib/prisma";
 import {
   MODULE_COMPLETION_UNITS,
   MODULE_MICRO_BUMP_PER_EXCHANGE,
+  RADAR_MICRO_PER_AXIS_EXCHANGE,
 } from "@/lib/programme-module-progress";
-
-/** Petit bonus radar à chaque échange sans META (les entiers 0–100 restent lisibles). */
-const RADAR_MICRO_PER_EXCHANGE = 2;
 
 type Row = {
   grammaire: number;
@@ -54,7 +52,7 @@ export async function bumpProgrammeGuidedMicroProgress(input: {
         }
       : { ...ZEROS };
     (Object.keys(ZEROS) as (keyof Row)[]).forEach((k) => {
-      cur[k] = clamp100(cur[k] + RADAR_MICRO_PER_EXCHANGE);
+      cur[k] = clamp100(cur[k] + RADAR_MICRO_PER_AXIS_EXCHANGE);
     });
     await tx.studentCompetencyProgress.upsert({
       where: { studentProfileId },

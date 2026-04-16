@@ -1,6 +1,6 @@
 "use client";
 
-import { BookMarked, Info, MessageCircle, Sparkles } from "lucide-react";
+import { BookMarked, Info, MessageCircle, Sparkles, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -40,7 +40,12 @@ async function consumeChatStream(
     onError: (message: string) => void;
     onDone: () => void;
   },
-): Promise<{ assistant: string; receivedDone: boolean; streamError: string | null }> {
+): Promise<{
+  assistant: string;
+  receivedDone: boolean;
+  streamError: string | null;
+  studelioProgressHint: string | null;
+}> {
   if (!res.body) throw new Error("empty body");
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
@@ -48,6 +53,7 @@ async function consumeChatStream(
   let assistant = "";
   let receivedDone = false;
   let streamError: string | null = null;
+  let studelioProgressHint: string | null = null;
 
   const handlePayload = (payload: Record<string, unknown>) => {
     if (payload.type === "session" && typeof payload.id === "string") {
@@ -63,6 +69,8 @@ async function consumeChatStream(
     }
     if (payload.type === "done") {
       receivedDone = true;
+      const h = payload.studelioProgressHint;
+      if (typeof h === "string" && h.trim()) studelioProgressHint = h.trim();
       handlers.onDone();
     }
   };
@@ -91,7 +99,7 @@ async function consumeChatStream(
     parseDataLine(line);
   }
 
-  return { assistant, receivedDone, streamError };
+  return { assistant, receivedDone, streamError, studelioProgressHint };
 }
 
 type SessionProps = {
@@ -107,6 +115,7 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
   const [sending, setSending] = useState(false);
   const [streamText, setStreamText] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [progressHint, setProgressHint] = useState<string | null>(null);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const startedRef = useRef(false);
@@ -154,6 +163,7 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
     setError(null);
     setStreamText("");
     setSending(true);
+    setProgressHint(null);
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
@@ -169,7 +179,7 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
       }
 
       let newId: string | null = null;
-      const { assistant, receivedDone, streamError } = await consumeChatStream(res, {
+      const { assistant, receivedDone, streamError, studelioProgressHint } = await consumeChatStream(res, {
         onSession: (id) => {
           newId = id;
           setSessionId(id);
@@ -185,6 +195,8 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
           "La connexion s’est interrompue. Réessaie (souvent lié au temps limite sur Vercel Hobby).",
         );
       }
+
+      if (studelioProgressHint) setProgressHint(studelioProgressHint);
 
       if (newId) {
         await loadMessages(newId);
@@ -229,6 +241,7 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
     if (!trimmed || sending || !sessionId) return;
     setInput("");
     setError(null);
+    setProgressHint(null);
     setSending(true);
     setStreamText("");
 
@@ -262,7 +275,7 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
         return;
       }
 
-      const { assistant, receivedDone, streamError } = await consumeChatStream(res, {
+      const { assistant, receivedDone, streamError, studelioProgressHint } = await consumeChatStream(res, {
         onSession: () => {},
         onDelta: (a) => setStreamText(a),
         onError: (m) => setError(m),
@@ -272,6 +285,8 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
       if (!receivedDone && !streamError && !assistant) {
         setError("Réponse incomplète — réessaie.");
       }
+
+      if (studelioProgressHint) setProgressHint(studelioProgressHint);
 
       await loadMessages(sessionId);
       if (!streamError && (receivedDone || assistant.trim().length > 0)) {
@@ -415,6 +430,25 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
           </div>
         ) : null}
 
+        {progressHint ? (
+          <div
+            className="flex items-start gap-3 border-t border-emerald-500/25 bg-emerald-500/[0.08] px-4 py-3 sm:px-8"
+            role="status"
+          >
+            <TrendingUp className="mt-0.5 size-4 shrink-0 text-emerald-700 dark:text-emerald-400" aria-hidden />
+            <p className="min-w-0 flex-1 text-sm leading-snug text-[var(--studelio-text-body)]">{progressHint}</p>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 shrink-0 px-2 text-xs"
+              onClick={() => setProgressHint(null)}
+            >
+              Fermer
+            </Button>
+          </div>
+        ) : null}
+
         {showProgrammeChoices ? (
           <div
             className="border-t border-[var(--studelio-border)] bg-[var(--studelio-blue-dim)]/25 px-4 py-3 sm:px-8"
@@ -479,7 +513,8 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
             </Button>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
-            Entrée pour envoyer · Maj+Entrée pour une ligne · André ajuste la difficulté après chaque réponse
+            Entrée pour envoyer · Maj+Entrée pour une ligne · Après chaque réponse d’André, un encart vert résume les
+            points enregistrés sur ton parcours (radar & modules)
           </p>
         </div>
       </div>
