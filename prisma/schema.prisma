@@ -160,6 +160,21 @@ model StudentProfile {
   programme              Programme? @relation(fields: [programmeId], references: [id])
   onboardingCompletedAt  DateTime?
   chapterProgress        StudentChapterProgress[]
+  competencyProgress     StudentCompetencyProgress?
+}
+
+/// Scores 0–100 par axe, mis à jour depuis les séances « programme guidé » (bloc META en fin de message André).
+model StudentCompetencyProgress {
+  id                 String         @id @default(cuid())
+  studentProfileId   String         @unique
+  studentProfile     StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  grammaire          Int            @default(0)
+  orthographe        Int            @default(0)
+  conjugaison        Int            @default(0)
+  vocabulaire        Int            @default(0)
+  expressionEcrite   Int            @default(0)
+  lecture            Int            @default(0)
+  updatedAt          DateTime       @updatedAt
 }
 
 model ParentProfile {

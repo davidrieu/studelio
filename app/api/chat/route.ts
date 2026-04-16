@@ -1,6 +1,7 @@
 import type { MessageParam, TextBlock } from "@anthropic-ai/sdk/resources/messages";
 import type { ChatSessionKind } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { buildDicteeSystemPrompt } from "@/lib/andre-prompt-dictee";
 import { buildProgrammeGuidedSystemPrompt } from "@/lib/andre-prompt-guided";
@@ -8,7 +9,9 @@ import { buildAndreSystemPrompt } from "@/lib/andre-prompt";
 import { andreModel, getAnthropic } from "@/lib/anthropic";
 import { formatLoadedFolderForPrompt, loadProgrammeFolderForNiveau } from "@/lib/programme-folder-loader";
 import { niveauLabel } from "@/lib/labels";
+import { applyProgrammeGuidedSessionMeta } from "@/lib/apply-programme-guided-session-meta";
 import { prisma } from "@/lib/prisma";
+import { stripProgrammeGuidedMeta } from "@/lib/programme-guided-meta";
 import { MINUTES_PER_CHAT_ROUND, recordStudentActivity } from "@/lib/record-student-activity";
 
 export const dynamic = "force-dynamic";
@@ -378,14 +381,31 @@ export async function POST(req: Request) {
           );
         }
 
+        const strippedGuided = isGuided ? stripProgrammeGuidedMeta(assistantText) : null;
+        const contentToStore = strippedGuided?.content ?? assistantText;
+
         await prisma.chatMessage.create({
           data: {
             sessionId: chatSessionId!,
             role: "ANDRE",
-            content: assistantText,
+            content: contentToStore,
             tokensUsed: final.usage?.output_tokens ?? null,
           },
         });
+
+        const programmeIdForMeta = sp.programmeId ?? programmeForPrompt?.id ?? null;
+        if (isGuided && strippedGuided?.meta && programmeIdForMeta) {
+          try {
+            await applyProgrammeGuidedSessionMeta({
+              studentProfileId: sp.id,
+              programmeId: programmeIdForMeta,
+              meta: strippedGuided.meta,
+            });
+            revalidatePath("/app/programme");
+          } catch (e) {
+            console.error("[chat] programme guided meta", e);
+          }
+        }
 
         await prisma.chatSession.update({
           where: { id: chatSessionId! },

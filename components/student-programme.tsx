@@ -16,8 +16,9 @@ import type { DictationRow } from "@/components/programme-dictations";
 import { ProgrammeDictationsSection } from "@/components/programme-dictations";
 import { buttonVariants } from "@/components/ui/button";
 import { chapterProgressLabel } from "@/lib/labels";
+import type { CompetencyScores } from "@/lib/programme-guided-meta";
 import {
-  buildSkillRadarData,
+  buildCompetencyRadarChartData,
   countChapterStats,
   type ProgrammeChapterForRadar,
   type ProgressByChapter,
@@ -38,6 +39,8 @@ type Props = {
   dictations?: DictationRow[];
   chapters: Chapter[];
   initialProgress: ProgressByChapter;
+  /** Scores 0–100 par axe (mis à jour depuis les séances programme avec André). */
+  competencyScores: CompetencyScores | null;
 };
 
 export function StudentProgramme({
@@ -46,15 +49,13 @@ export function StudentProgramme({
   dictations = [],
   chapters,
   initialProgress,
+  competencyScores,
 }: Props) {
   const [progress, setProgress] = useState<ProgressByChapter>(initialProgress);
   const [err, setErr] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const radarData = useMemo(
-    () => buildSkillRadarData(chapters, progress, 6),
-    [chapters, progress],
-  );
+  const radarData = useMemo(() => buildCompetencyRadarChartData(competencyScores), [competencyScores]);
 
   const stats = useMemo(
     () => countChapterStats(chapters.map((c) => c.id), progress),
@@ -122,27 +123,24 @@ export function StudentProgramme({
         <section className="rounded-[20px] border border-[var(--studelio-border)] bg-card p-6 shadow-[var(--studelio-shadow)]">
           <h2 className="font-display text-lg font-semibold text-[var(--studelio-text)]">Radar des compétences</h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Pour chaque axe, l’avancement reflète les chapitres liés (terminé = 100 %, en cours = 50 %).
+            Chaque axe progresse quand tu travailles avec André en <strong>séance programme</strong> (il envoie un petit
+            suivi technique en fin de message). Les statuts de chapitres restent ajustables manuellement ci-dessous.
           </p>
           <div className="mt-4 h-[min(22rem,55vw)] w-full min-h-[240px]">
-            {radarData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart cx="50%" cy="50%" outerRadius="72%" data={radarData}>
-                  <PolarGrid stroke="var(--studelio-border)" />
-                  <PolarAngleAxis dataKey="subject" tick={{ fill: "var(--studelio-text-body)", fontSize: 11 }} />
-                  <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
-                  <Radar
-                    name="Avancement"
-                    dataKey="value"
-                    stroke="var(--studelio-blue)"
-                    fill="var(--studelio-blue)"
-                    fillOpacity={0.35}
-                  />
-                </RadarChart>
-              </ResponsiveContainer>
-            ) : (
-              <p className="text-sm text-muted-foreground">Pas assez de données pour le radar.</p>
-            )}
+            <ResponsiveContainer width="100%" height="100%">
+              <RadarChart cx="50%" cy="50%" outerRadius="72%" data={radarData}>
+                <PolarGrid stroke="var(--studelio-border)" />
+                <PolarAngleAxis dataKey="subject" tick={{ fill: "var(--studelio-text-body)", fontSize: 10 }} />
+                <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
+                <Radar
+                  name="Progression"
+                  dataKey="value"
+                  stroke="var(--studelio-blue)"
+                  fill="var(--studelio-blue)"
+                  fillOpacity={0.35}
+                />
+              </RadarChart>
+            </ResponsiveContainer>
           </div>
         </section>
 

@@ -1,4 +1,5 @@
 import type { ChapterProgressStatus } from "@prisma/client";
+import type { CompetencyScores } from "@/lib/programme-guided-meta";
 
 export type ProgrammeChapterForRadar = {
   id: string;
@@ -7,6 +8,33 @@ export type ProgrammeChapterForRadar = {
 };
 
 export type ProgressByChapter = Record<string, ChapterProgressStatus | undefined>;
+
+/** Libellés radar (alignés sur `StudentCompetencyProgress` + séance programme META). */
+const RADAR_AXIS_ORDER: { subject: string; key: keyof CompetencyScores }[] = [
+  { subject: "Grammaire", key: "grammaire" },
+  { subject: "Orthographe", key: "orthographe" },
+  { subject: "Conjugaison", key: "conjugaison" },
+  { subject: "Vocabulaire", key: "vocabulaire" },
+  { subject: "Expression écrite", key: "expressionEcrite" },
+  { subject: "Lecture", key: "lecture" },
+];
+
+/** Données Recharts pour le radar à 6 axes fixes (scores 0–100 depuis les séances programme avec André). */
+export function buildCompetencyRadarChartData(scores: CompetencyScores | null): { subject: string; value: number; fullMark: number }[] {
+  const s = scores ?? {
+    grammaire: 0,
+    orthographe: 0,
+    conjugaison: 0,
+    vocabulaire: 0,
+    expressionEcrite: 0,
+    lecture: 0,
+  };
+  return RADAR_AXIS_ORDER.map(({ subject, key }) => ({
+    subject,
+    value: Math.min(100, Math.max(0, Math.round(s[key]))),
+    fullMark: 100,
+  }));
+}
 
 /** Pour chaque compétence (max `maxSkills`), % de chapitres couverts — terminé = 100 % du segment, en cours = 50 %. */
 export function buildSkillRadarData(

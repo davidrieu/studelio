@@ -2,6 +2,7 @@ import { tagLabel } from "@/lib/labels";
 import type { AndreProgrammeContext } from "@/lib/andre-prompt";
 import { ANDRE_ENONCE_NO_ANSWER_SECTION } from "@/lib/andre-enonce-no-spoiler-prompt";
 import { ANDRE_TWO_STRIKES_SECTION } from "@/lib/andre-two-strikes-prompt";
+import { COMPETENCY_RADAR_LABELS, STUDELIO_META_MARKER } from "@/lib/programme-guided-meta";
 import type { Niveau, Tag } from "@prisma/client";
 
 const tagPedagogyHints: Record<Tag, string> = {
@@ -121,5 +122,23 @@ Les dictées avec André se font dans l’onglet **Dictée** du menu (audio + co
 
 ## Adaptation obligatoire
 ${tagAdaptation}
-- Ajuste en continu la **difficulté perçue** à partir des **réponses réelles** de l’élève dans cette séance, en plus du niveau scolaire affiché.`;
+- Ajuste en continu la **difficulté perçue** à partir des **réponses réelles** de l’élève dans cette séance, en plus du niveau scolaire affiché.
+
+## Suivi Studelio (obligatoire — **chaque** message)
+Après tout le texte utile pour l’élève, termine **systématiquement** par le bloc technique suivant (il alimente son radar de compétences et le suivi des chapitres). **Aucun** texte après le JSON.
+
+1. Saut de ligne
+2. Ligne **exacte** : \`[[STUDELIO_META]]\`
+3. Saut de ligne
+4. **Une seule ligne** de JSON compact, sans Markdown autour.
+
+Schéma JSON :
+- \`skills\` : tableau (1 à 6) de chaînes parmi **exactement** : ${COMPETENCY_RADAR_LABELS.join(", ")}.
+- \`chapters\` : tableau d’entiers = **numéros d’ordre** des chapitres (voir « Chapitres / thèmes » : *Chapitre 1*, *Chapitre 2*…) sur lesquels porte **surtout** ce message ; \`[]\` si rien de clair.
+
+**Exemple** (sans code fence dans ta réponse réelle) — enchaînement après ton dernier paragraphe visible :
+\`[[STUDELIO_META]]\` puis ligne suivante :
+\`{"skills":["Grammaire","Lecture"],"chapters":[1]}\`
+
+Le serveur reconnaît le bloc **uniquement** si la ligne du marqueur est exactement \`[[STUDELIO_META]]\` entourée des sauts de ligne comme décrit (équivalent interne : \`${STUDELIO_META_MARKER.trim()}\` entre le corps du message et le JSON).`;
 }

@@ -4,6 +4,7 @@ import { BookMarked, Info, MessageCircle, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChatMarkdown } from "@/components/chat-markdown";
+import { previewWithoutMetaTail } from "@/lib/programme-guided-meta";
 import { IconTooltipAction } from "@/components/icon-tooltip-action";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -365,7 +366,7 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
                 )}
               >
                 {m.role === "ANDRE" ? (
-                  <ChatMarkdown content={m.content} />
+                  <ChatMarkdown content={m.role === "ANDRE" ? previewWithoutMetaTail(m.content) : m.content} />
                 ) : (
                   <p className="whitespace-pre-wrap">{m.content}</p>
                 )}
@@ -376,7 +377,7 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
           {streamText ? (
             <div className="flex justify-start">
               <div className="max-w-[min(100%,40rem)] rounded-2xl border border-[var(--studelio-border)] bg-card px-4 py-3 text-sm leading-relaxed text-[var(--studelio-text-body)] shadow-sm">
-                <ChatMarkdown content={streamText} />
+                <ChatMarkdown content={previewWithoutMetaTail(streamText)} />
                 <span className="mt-2 inline-block h-2 w-2 animate-pulse rounded-full bg-[var(--studelio-blue)]" />
               </div>
             </div>
