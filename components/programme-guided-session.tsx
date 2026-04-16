@@ -151,7 +151,10 @@ function parcoursHintTone(h: string): "success" | "error" | "warning" {
     t.includes("pas pu") ||
     t.includes("erreur serveur") ||
     t.includes("impossible de") ||
-    (t.includes("introuvable") && t.includes("parcours"))
+    (t.includes("introuvable") && t.includes("parcours")) ||
+    (t.includes("manque") && (t.includes("base") || t.includes("table"))) ||
+    t.includes("migrations prisma") ||
+    t.includes("migrate deploy")
   ) {
     return "error";
   }

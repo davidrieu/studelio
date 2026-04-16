@@ -17,6 +17,7 @@ import {
 import { findStudentChapterProgressRowsSafe } from "@/lib/load-student-chapter-progress-safe";
 import { prisma } from "@/lib/prisma";
 import { stripProgrammeGuidedMeta } from "@/lib/programme-guided-meta";
+import { parcoursPersistUserMessage } from "@/lib/map-prisma-parcours-error";
 import type { StudelioProgressDeltaPayload } from "@/lib/studelio-progress-delta";
 import { ensureStudentProgrammeLinkedToCanonical } from "@/lib/student-programme-canonical";
 import { MINUTES_PER_CHAT_ROUND, recordStudentActivity } from "@/lib/record-student-activity";
@@ -501,9 +502,9 @@ export async function POST(req: Request) {
               }
             } catch (e) {
               const code = e instanceof Prisma.PrismaClientKnownRequestError ? e.code : undefined;
-              console.error("[chat] programme guided progress", e, code ? `[Prisma ${code}]` : "");
-              studelioProgressHint =
-                "Parcours : la mise à jour n’a pas pu s’enregistrer (erreur serveur). Réessaie dans un instant ou ouvre « Parcours » et clique « Recharger les scores ».";
+              const msg = e instanceof Error ? e.message : String(e);
+              console.error("[chat] programme guided progress", msg, e, code ? `[Prisma ${code}]` : "");
+              studelioProgressHint = parcoursPersistUserMessage(e);
             }
           }
         }
