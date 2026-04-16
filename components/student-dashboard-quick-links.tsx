@@ -81,8 +81,8 @@ export function StudentDashboardQuickLinks({ epreuveShortLabel }: { epreuveShort
     {
       id: "seance" as const,
       href: "/app/programme/seance",
-      title: "Ma séance",
-      description: "Ta série du jour sur ton programme personnalisé.",
+      title: "Séance programme",
+      description: "André mène les exercices sur ton parcours — points radar au fil des réponses.",
       Icon: BookOpen,
     },
     {
