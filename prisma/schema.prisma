@@ -159,8 +159,6 @@ model StudentProfile {
   programmeId            String?
   programme              Programme? @relation(fields: [programmeId], references: [id])
   onboardingCompletedAt  DateTime?
-  /// Une fois rempli : rejouage historique des META séance programme → radar / modules (évite de recalculer à chaque visite).
-  guidedMetaReplayedAt   DateTime?
   chapterProgress        StudentChapterProgress[]
   competencyProgress     StudentCompetencyProgress?
 }

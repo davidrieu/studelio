@@ -6,6 +6,26 @@ import { MODULE_COMPLETION_META_HITS } from "@/lib/programme-module-progress";
 const META_SNIPPET = "[[STUDELIO_META]]";
 const REPLAY_CAP = 400;
 
+function isGuidedMetaReplayed(errorProfile: unknown): boolean {
+  if (!errorProfile || typeof errorProfile !== "object" || Array.isArray(errorProfile)) return false;
+  const nest = (errorProfile as Record<string, unknown>).__studelio;
+  if (!nest || typeof nest !== "object" || Array.isArray(nest)) return false;
+  return Boolean((nest as Record<string, unknown>).guidedMetaReplayed);
+}
+
+function withGuidedMetaReplayedFlag(errorProfile: unknown): Record<string, unknown> {
+  const base =
+    errorProfile && typeof errorProfile === "object" && !Array.isArray(errorProfile)
+      ? { ...(errorProfile as Record<string, unknown>) }
+      : {};
+  const prev =
+    base.__studelio && typeof base.__studelio === "object" && !Array.isArray(base.__studelio)
+      ? { ...(base.__studelio as Record<string, unknown>) }
+      : {};
+  base.__studelio = { ...prev, guidedMetaReplayed: true };
+  return base;
+}
+
 /**
  * Une seule fois par élève :
  * - si des messages André contiennent encore le META → rejouage pour recoller radar + barres ;
@@ -20,9 +40,9 @@ export async function bootstrapGuidedProgressHistoryOnce(input: {
 
   const profile = await prisma.studentProfile.findUnique({
     where: { id: studentProfileId },
-    select: { guidedMetaReplayedAt: true },
+    select: { errorProfile: true },
   });
-  if (profile?.guidedMetaReplayedAt) return;
+  if (isGuidedMetaReplayed(profile?.errorProfile)) return;
 
   const withMeta = await prisma.chatMessage.findMany({
     where: {
@@ -122,6 +142,6 @@ export async function bootstrapGuidedProgressHistoryOnce(input: {
 
   await prisma.studentProfile.update({
     where: { id: studentProfileId },
-    data: { guidedMetaReplayedAt: new Date() },
+    data: { errorProfile: withGuidedMetaReplayedFlag(profile?.errorProfile) },
   });
 }
