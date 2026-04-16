@@ -420,7 +420,8 @@ export async function POST(req: Request) {
         }
 
         const strippedGuided = isGuided ? stripProgrammeGuidedMeta(assistantText) : null;
-        const contentToStore = strippedGuided?.content ?? assistantText;
+        // Séance programme : on conserve le texte complet (META inclus) pour rejouage / audit ; l’UI masque le META.
+        const contentToStore = isGuided ? assistantText : (strippedGuided?.content ?? assistantText);
 
         await prisma.chatMessage.create({
           data: {

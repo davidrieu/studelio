@@ -6,6 +6,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { StudentProgramme } from "@/components/student-programme";
 import { niveauLabel } from "@/lib/labels";
 import { loadStudentCompetencyScoresSafe } from "@/lib/load-student-competency-scores";
+import { bootstrapGuidedProgressHistoryOnce } from "@/lib/bootstrap-guided-progress-history";
 import { ensureProgrammeStandardModules } from "@/lib/ensure-programme-standard-modules";
 import { findStudentChapterProgressRowsSafe } from "@/lib/load-student-chapter-progress-safe";
 import { prisma } from "@/lib/prisma";
@@ -76,6 +77,15 @@ export default async function ProgrammePage() {
       where: { programmeId: prog.id },
       orderBy: { order: "asc" },
     });
+    try {
+      await bootstrapGuidedProgressHistoryOnce({
+        studentProfileId: profile.id,
+        userId: profile.userId,
+        programmeId: prog.id,
+      });
+    } catch (e) {
+      console.error("[programme] bootstrap guided progress history", e);
+    }
   }
 
   // Avant : on bloquait toute la page si zéro chapitre → les dictées admin n’apparaissaient jamais.

@@ -149,9 +149,9 @@ export function StudentProgramme({
         <section className="rounded-[20px] border border-[var(--studelio-border)] bg-card p-6 shadow-[var(--studelio-shadow)]">
           <h2 className="font-display text-lg font-semibold text-[var(--studelio-text)]">Modules</h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Les libellés des 6 modules sont toujours ceux du programme Studelio (synchro auto). Statut et barre : après
-            chaque séance programme, André envoie un META (objectif environ{" "}
-            {MODULE_COMPLETION_META_HITS} passages en focus pour terminer un module).
+            Les libellés des 6 modules sont toujours ceux du programme Studelio (synchro auto). Radar et barres : META
+            d’André en fin de message en séance programme ; un premier passage sur cette page peut aussi rattraper
+            l’historique (anciennes séances).
           </p>
           <ul className="mt-4 space-y-5">
             {chapters.length === 0 ? (

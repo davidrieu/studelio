@@ -2,7 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { labelToPrismaField, type ParsedProgrammeGuidedMeta } from "@/lib/programme-guided-meta";
 import { MODULE_COMPLETION_META_HITS } from "@/lib/programme-module-progress";
 
-const SKILL_DELTA = 4;
+/** Points radar par compétence citée dans un META (visible dès les premières séances). */
+const SKILL_DELTA = 10;
 
 function clamp100(n: number): number {
   return Math.min(100, Math.max(0, Math.round(n)));
