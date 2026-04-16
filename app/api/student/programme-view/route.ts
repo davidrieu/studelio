@@ -5,7 +5,7 @@ import { getStudentProgrammeViewData } from "@/lib/student-programme-view-data";
 export const dynamic = "force-dynamic";
 
 /**
- * JSON « live » pour la page Parcours (radar + barres modules), sans cache navigateur.
+ * JSON « live » pour la page Parcours (radar + barres modules). Les dictées sont sur /app/dictee.
  */
 export async function GET() {
   const session = await auth();

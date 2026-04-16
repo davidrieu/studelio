@@ -16,19 +16,11 @@ export type ProgrammeViewChapter = {
   skills: string[];
 };
 
-export type ProgrammeViewDictation = {
-  id: string;
-  title: string;
-  audioUrl: string;
-  order: number;
-};
-
 export type ProgrammeViewPayload = {
   ok: true;
   updatedAt: string;
   programmeTitle: string;
   programmeDescription: string | null;
-  dictations: ProgrammeViewDictation[];
   chapters: ProgrammeViewChapter[];
   chapterProgress: Record<string, { status: ChapterProgressStatus; programmeMetaHits: number }>;
   competencyScores: CompetencyScores | null;
@@ -53,10 +45,7 @@ export async function getStudentProgrammeViewData(userId: string): Promise<Progr
       programme: {
         include: {
           chapters: { orderBy: { order: "asc" } },
-          dictations: {
-            orderBy: { order: "asc" },
-            select: { id: true, title: true, audioUrl: true, order: true },
-          },
+          _count: { select: { dictations: true } },
         },
       },
     },
@@ -79,10 +68,7 @@ export async function getStudentProgrammeViewData(userId: string): Promise<Progr
       programme: {
         include: {
           chapters: { orderBy: { order: "asc" } },
-          dictations: {
-            orderBy: { order: "asc" },
-            select: { id: true, title: true, audioUrl: true, order: true },
-          },
+          _count: { select: { dictations: true } },
         },
       },
     },
@@ -93,7 +79,7 @@ export async function getStudentProgrammeViewData(userId: string): Promise<Progr
   }
 
   const prog = profile.programme;
-  const dictations = prog?.dictations ?? [];
+  const dictationCount = prog?._count.dictations ?? 0;
 
   let chapters = prog?.chapters ?? [];
   if (prog?.id) {
@@ -114,7 +100,7 @@ export async function getStudentProgrammeViewData(userId: string): Promise<Progr
   }
 
   const hasChapters = chapters.length > 0;
-  const hasDictations = dictations.length > 0;
+  const hasDictations = dictationCount > 0;
 
   if (!prog || (!hasChapters && !hasDictations)) {
     return {
@@ -144,7 +130,6 @@ export async function getStudentProgrammeViewData(userId: string): Promise<Progr
     updatedAt: new Date().toISOString(),
     programmeTitle: prog.title,
     programmeDescription: prog.description,
-    dictations,
     chapters: chapters.map((c) => ({
       id: c.id,
       order: c.order,

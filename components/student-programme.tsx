@@ -11,8 +11,6 @@ import {
   RadarChart,
   ResponsiveContainer,
 } from "recharts";
-import type { DictationRow } from "@/components/programme-dictations";
-import { ProgrammeDictationsSection } from "@/components/programme-dictations";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { chapterProgressLabel, niveauLabel } from "@/lib/labels";
 import type { CompetencyScores } from "@/lib/programme-guided-meta";
@@ -152,7 +150,6 @@ export function StudentProgramme() {
       })),
     [payload?.chapters],
   );
-  const dictations: DictationRow[] = payload?.dictations ?? [];
   const programmeTitle = payload?.programmeTitle ?? "Programme";
   const programmeDescription = payload?.programmeDescription ?? null;
   const updatedAt = payload?.updatedAt;
@@ -292,8 +289,6 @@ export function StudentProgramme() {
           : "Modules : en attente de contenu en base."}
         </p>
       </section>
-
-      <ProgrammeDictationsSection dictations={dictations} />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-[20px] border border-[var(--studelio-border)] bg-card p-6 shadow-[var(--studelio-shadow)]">
