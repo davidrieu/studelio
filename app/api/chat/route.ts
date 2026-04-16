@@ -16,8 +16,10 @@ import {
 } from "@/lib/persist-programme-guided-progress";
 import { findStudentChapterProgressRowsSafe } from "@/lib/load-student-chapter-progress-safe";
 import { prisma } from "@/lib/prisma";
-import { stripProgrammeGuidedMeta } from "@/lib/programme-guided-meta";
+import { isProgrammeGuidedUiChoiceMessage } from "@/lib/programme-guided-ui-presets";
+import { previewWithoutMetaTail, stripProgrammeGuidedMeta } from "@/lib/programme-guided-meta";
 import { parcoursPersistUserMessage } from "@/lib/map-prisma-parcours-error";
+import { studelioProgressHintUiPresetChoice } from "@/lib/studelio-progress-user-hint";
 import type { StudelioProgressDeltaPayload } from "@/lib/studelio-progress-delta";
 import { ensureStudentProgrammeLinkedToCanonical } from "@/lib/student-programme-canonical";
 import { MINUTES_PER_CHAT_ROUND, recordStudentActivity } from "@/lib/record-student-activity";
@@ -75,6 +77,9 @@ export async function POST(req: Request) {
   const isDicteeBootstrap = isDictee && body.bootstrap === true && !body.sessionId;
 
   const raw = typeof body.message === "string" ? body.message.trim() : "";
+  /** Raccourcis UI « exercice » / « cours » : pas de persistance parcours sur la réponse André associée. */
+  const skipGuidedParcoursForUiChoice =
+    isGuided && !isBootstrap && raw.length > 0 && isProgrammeGuidedUiChoiceMessage(raw);
   if (!isBootstrap && !isDicteeBootstrap && !raw) {
     return NextResponse.json({ error: "Message vide." }, { status: 400 });
   }
@@ -465,8 +470,13 @@ export async function POST(req: Request) {
         }
 
         const strippedGuided = isGuided ? stripProgrammeGuidedMeta(assistantText) : null;
-        // Séance programme : on conserve le texte complet (META inclus) pour rejouage / audit ; l’UI masque le META.
-        const contentToStore = isGuided ? assistantText : (strippedGuided?.content ?? assistantText);
+        // Séance programme : en général on garde le META en base pour rejouage ; pas de META si tour « raccourci UI » (évite crédit fantôme au replay).
+        const contentToStore =
+          isGuided && skipGuidedParcoursForUiChoice
+            ? previewWithoutMetaTail(assistantText).trimEnd()
+            : isGuided
+              ? assistantText
+              : (strippedGuided?.content ?? assistantText);
 
         await prisma.chatMessage.create({
           data: {
@@ -483,6 +493,8 @@ export async function POST(req: Request) {
           if (!guidedPersistProgrammeId) {
             studelioProgressHint =
               "Parcours : aucun programme n’est relié à ton niveau en base — la progression ne peut pas s’enregistrer. Vérifie avec un admin que le programme existe pour ta classe.";
+          } else if (skipGuidedParcoursForUiChoice) {
+            studelioProgressHint = studelioProgressHintUiPresetChoice();
           } else {
             try {
               const out = await persistProgrammeGuidedProgressTurn({

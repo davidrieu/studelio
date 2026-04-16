@@ -5,6 +5,11 @@ export function studelioProgressHintNoPoints(): string {
   return "Parcours : aucun point sans bloc [[STUDELIO_META]] + JSON (avec le résultat `outcome`). Demande à André de compléter la fin du message.";
 }
 
+/** Après un clic raccourci « exercice » / « cours » — pas de crédit tant qu’il n’y a pas de vraie réponse. */
+export function studelioProgressHintUiPresetChoice(): string {
+  return "Parcours : pas de points pour ce message — c’est seulement ton choix de démarrage. Les points arriveront quand tu répondras à une question ou à un exercice d’André.";
+}
+
 export function studelioProgressHintMeta(meta: ParsedProgrammeGuidedMeta): string {
   const o = meta.outcome;
   const r = metaRadarPointsPerSkill(o);

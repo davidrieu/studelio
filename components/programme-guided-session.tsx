@@ -8,6 +8,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChatMarkdown } from "@/components/chat-markdown";
 import type { CompetencyScores } from "@/lib/programme-guided-meta";
 import { previewWithoutMetaTail } from "@/lib/programme-guided-meta";
+import {
+  PROGRAMME_GUIDED_UI_PRESET_CLASS_FOCUS,
+  PROGRAMME_GUIDED_UI_PRESET_EXERCISE,
+} from "@/lib/programme-guided-ui-presets";
 import { emitProgrammeProgressUpdated } from "@/lib/studelio-programme-progress-events";
 import type { StudelioProgressDeltaPayload } from "@/lib/studelio-progress-delta";
 import { isStudelioProgressDeltaPayload } from "@/lib/studelio-progress-delta";
@@ -22,11 +26,6 @@ export type ProgrammeSeanceContextBanner = {
 };
 
 const STORAGE_KEY = "studelio.programmeGuidedSessionId";
-
-/** Messages courts reconnus par André (prompt programme guidé) quand l’élève utilise les raccourcis UI. */
-const PRESET_EXERCISE = "Je fais l’exercice proposé.";
-const PRESET_CLASS =
-  "Je préfère qu’on s’appuie d’abord sur ce qu’on fait en ce moment en cours de français avant de continuer.";
 
 const RADAR_SHORT: Record<keyof CompetencyScores, string> = {
   grammaire: "Gram.",
@@ -629,7 +628,7 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
                 variant="default"
                 className="h-auto min-h-10 w-full justify-center rounded-xl px-4 py-2.5 text-left text-sm font-medium sm:w-auto sm:min-w-[12rem]"
                 disabled={sending || bootstrapping || !sessionId}
-                onClick={() => void sendMessage(PRESET_EXERCISE)}
+                onClick={() => void sendMessage(PROGRAMME_GUIDED_UI_PRESET_EXERCISE)}
               >
                 Faire l’exercice proposé
               </Button>
@@ -638,7 +637,7 @@ export function ProgrammeGuidedSession({ contextBanner }: SessionProps) {
                 variant="outline"
                 className="h-auto min-h-10 w-full justify-center rounded-xl border-[var(--studelio-blue)]/40 bg-card px-4 py-2.5 text-left text-sm font-medium text-[var(--studelio-text)] sm:w-auto sm:min-w-[12rem]"
                 disabled={sending || bootstrapping || !sessionId}
-                onClick={() => void sendMessage(PRESET_CLASS)}
+                onClick={() => void sendMessage(PROGRAMME_GUIDED_UI_PRESET_CLASS_FOCUS)}
               >
                 Parler de ce qu’on fait en cours
               </Button>
