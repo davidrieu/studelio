@@ -113,7 +113,7 @@ La **version publiée** de l’app pour le suivi des déploiements est le champ 
 | Problème | Piste |
 |----------|--------|
 | Build Vercel : erreur Prisma | `DATABASE_URL` manquante ou incorrecte ; SSL : Neon inclut souvent `?sslmode=require`. |
-| **P1002** / timeout **advisory lock** (`pg_advisory_lock`) au build | Tu utilises l’URL **poolée** seule : ajoute `DIRECT_URL` = URL **directe** Neon (dashboard → *Connection details* → *Direct*). Ne pas s’appuyer sur le pooler pour les migrations. |
+| **P1002** / timeout **advisory lock** (`pg_advisory_lock`) au build | L’URL de migration pointait vers le **pooler** (`-pooler` dans l’hôte). Sur Vercel, `vercel-build` tente de **dériver** l’URL directe Neon si le motif est reconnu ; sinon mets `DIRECT_URL` = URL **directe** (dashboard Neon → *Direct*, sans `-pooler`). |
 | `Environment variable not found: DIRECT_URL` en local | Ajoute dans `.env` une ligne `DIRECT_URL="…"` identique à `DATABASE_URL` (voir `.env.example`). Obligatoire pour `prisma migrate dev` / `prisma validate` ; `prisma generate` et `npm run build` peuvent passer sans. |
 | Connexion / OAuth bizarre | `AUTH_URL` / `NEXTAUTH_URL` doivent correspondre à l’URL réelle du site (https, sans slash final selon les cas). |
 | Compte démo introuvable | Vérifie les logs de build : `[studelio-bootstrap]` doit avoir lancé le seed si la base était vide. Sinon lance `npx prisma db seed` manuellement. Si `STUDELIO_SKIP_DB_BOOTSTRAP=1`, le seed auto est désactivé. |
