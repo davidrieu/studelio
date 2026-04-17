@@ -25,6 +25,15 @@ export function LoginForm() {
     const origin = window.location.origin;
     const safeCallbackUrl = `${origin}/auth/login`;
 
+    // Ancien ?error=session (échec post-login) + nouveau essai : évite d’afficher les deux messages.
+    const u = new URL(window.location.href);
+    if (u.searchParams.has("error") || u.searchParams.has("session")) {
+      u.searchParams.delete("error");
+      u.searchParams.delete("session");
+      const q = u.searchParams.toString();
+      window.history.replaceState({}, "", `${u.pathname}${q ? `?${q}` : ""}`);
+    }
+
     try {
       const res = await signIn("credentials", {
         email,
@@ -33,7 +42,9 @@ export function LoginForm() {
         callbackUrl: safeCallbackUrl,
       });
 
-      if (!res?.ok) {
+      // Auth.js v5 : échec identifiants peut renvoyer ok: true + error: "CredentialsSignin" (bug côté lib).
+      const signInFailed = Boolean(res?.error) || res?.ok === false;
+      if (signInFailed) {
         setError(
           res?.error === "CredentialsSignin"
             ? "Email ou mot de passe incorrect."
@@ -86,7 +97,7 @@ export function LoginForm() {
           {searchParams.get("session") === "required" ? (
             <p className="text-sm text-muted-foreground">Identifie-toi pour accéder à cette page.</p>
           ) : null}
-          {searchParams.get("error") === "session" ? (
+          {searchParams.get("error") === "session" && !error ? (
             <p className="text-sm text-destructive">
               La session n’a pas été reconnue après la connexion. Réessaie : si ça persiste, vérifie en navigation
               privée ou les variables Vercel <span className="font-mono">AUTH_SECRET</span> /{" "}

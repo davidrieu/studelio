@@ -60,7 +60,8 @@ export function RegisterForm() {
         callbackUrl: safeCallbackUrl,
       });
 
-      if (!sign?.ok) {
+      const signInFailed = Boolean(sign?.error) || sign?.ok === false;
+      if (signInFailed) {
         setError(
           sign?.error === "CredentialsSignin"
             ? "Compte créé, mais la connexion a échoué. Réessaie sur la page de connexion avec le même mot de passe."
