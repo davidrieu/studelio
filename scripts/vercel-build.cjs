@@ -5,6 +5,9 @@
  * Si DIRECT_URL n’est pas défini, on retombe sur DATABASE_URL (OK pour Docker local
  * ou une seule URL « directe » sur Vercel). Avec Neon pooler sur DATABASE_URL,
  * configure DIRECT_URL = URL directe (dashboard Neon, sans « -pooler »).
+ *
+ * Après generate : `bootstrap-db-if-empty.cjs` exécute `prisma db seed` si aucune
+ * ligne Programme (base neuve). Désactiver : STUDELIO_SKIP_DB_BOOTSTRAP=1.
  */
 const { spawnSync } = require("node:child_process");
 
@@ -26,5 +29,9 @@ function run(cmd) {
 
 run("npx prisma migrate deploy");
 run("npx prisma generate");
-if (withSeed) run("npx prisma db seed");
+if (withSeed) {
+  run("npx prisma db seed");
+} else {
+  run("node scripts/bootstrap-db-if-empty.cjs");
+}
 run("npx next build");

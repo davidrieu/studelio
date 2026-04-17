@@ -6,11 +6,11 @@ Ce guide part du principe que le code est sur GitHub ([davidrieu/studelio](https
 
 | Où ? | Rôle |
 |------|------|
-| **Vercel** | Héberge le site, lance le build, exécute migrations + compilation Next.js. Le seed se fait à part si besoin (`db seed` ou `build:with-seed`). |
+| **Vercel** | Héberge le site, lance le build : migrations, `generate`, puis **si la base n’a aucun programme** exécution automatique du **seed** (une fois), puis `next build`. Désactiver ce remplissage auto : `STUDELIO_SKIP_DB_BOOTSTRAP=1`. Forcer le seed à chaque build : `build:with-seed`. |
 | **Neon** | Fournit **PostgreSQL** dans le cloud. Sur Vercel : `DATABASE_URL` (souvent **poolée**) + `DIRECT_URL` (**directe**, sans `-pooler`) pour que `prisma migrate deploy` fonctionne — voir §3 et §7. |
 | **GitHub** | Stocke le code ; Vercel déploie à chaque push sur `main`. |
 
-Le **build Vercel** utilise `npm run vercel-build` : `prisma migrate deploy` (via connexion **directe**), `prisma generate`, puis `next build` (sans seed automatique). Pour remplir programmes + comptes démo **une fois** : `npx prisma db seed` depuis ton PC avec la même `DATABASE_URL`, ou temporairement `npm run build:with-seed` dans les réglages Vercel.
+Le **build Vercel** utilise `npm run vercel-build` : `prisma migrate deploy` (via connexion **directe**), `prisma generate`, puis le script **`bootstrap-db-if-empty`** (seed **uniquement** si `Programme` est vide), puis `next build`. Sur une base **déjà** peuplée, le seed n’est pas relancé. Pour forcer le seed à **chaque** build (ex. preview démo) : `npm run build:with-seed`.
 
 ---
 
@@ -31,7 +31,7 @@ Le **build Vercel** utilise `npm run vercel-build` : `prisma migrate deploy` (vi
 2. **Add New… → Project** → importe le dépôt `davidrieu/studelio`.
 3. **Framework Preset** : Next.js (détecté automatiquement).
 4. **Root Directory** : `.` (racine).
-5. **Build Command** : `npm run vercel-build` (recommandé : migrations + build). Le défaut `npm run build` du preset Next.js ne lance **pas** les migrations. Pour le seed à chaque build (démo / preview) : `npm run build:with-seed`.
+5. **Build Command** : `npm run vercel-build` (recommandé : migrations + seed auto si base vide + build). Le défaut `npm run build` du preset Next.js ne lance **pas** les migrations. Pour le seed à **chaque** build (démo / preview) : `npm run build:with-seed`.
 
 ---
 
@@ -50,6 +50,8 @@ Dans **Project → Settings → Environment Variables**, ajoute au minimum :
 
 Pour les **Preview** (branches), tu peux mettre l’URL de preview ou laisser vide au début ; NextAuth peut exiger une URL cohérente — en cas d’erreur de callback, ajoute aussi pour Preview une variable `NEXTAUTH_URL` = URL de la preview (visible après un déploiement).
 
+**Optionnel** : `STUDELIO_SKIP_DB_BOOTSTRAP` = `1` pour **ne pas** lancer le seed automatique sur base vide (rare : déploiement sans données démo, seed manuel ailleurs).
+
 **Optionnel** (quand tu les utiliseras) : copie les clés depuis `.env.example` — `GOOGLE_CLIENT_*`, `STRIPE_*`, `ANTHROPIC_API_KEY`, etc.
 
 > **Ne commite jamais** `.env` : les secrets vivent uniquement sur Vercel (et en local sur ton PC).
@@ -59,12 +61,9 @@ Pour les **Preview** (branches), tu peux mettre l’URL de preview ou laisser vi
 ## 4. Premier déploiement
 
 1. Clique **Deploy** sur Vercel.
-2. Le build exécute `prisma migrate deploy` (connexion `DIRECT_URL`), puis `prisma generate`, puis `next build`.
-3. **Première fois** : lance le seed une fois pour les programmes et les comptes démo (depuis ton PC avec `DATABASE_URL` pointant vers Neon, ou via `npm run build:with-seed` sur Vercel si tu préfères) :
-   ```powershell
-   npx prisma db seed
-   ```
-4. Ouvre l’URL du site et connecte-toi avec le compte démo (après seed) :
+2. Le build exécute `prisma migrate deploy` (connexion `DIRECT_URL`), puis `prisma generate`, puis **si aucun programme en base** `prisma db seed`, puis `next build`.
+3. **Base neuve** : le seed est lancé **automatiquement** au premier build réussi ; les comptes démo sont ceux définis dans `prisma/seed.ts` (ex. `demo@studelio.local`). Tu peux toujours relancer manuellement `npx prisma db seed` depuis ton PC si besoin.
+4. Ouvre l’URL du site et connecte-toi avec le compte démo (après premier seed) :
    - **Email :** `demo@studelio.local` / **admin@studelio.local`
    - **Mot de passe :** `studelio-local`
 5. Si le build échoue, ouvre les **Build Logs** : souvent `DATABASE_URL` manquante ou mauvaise.
@@ -88,8 +87,8 @@ npx prisma db seed
 Le dépôt contient déjà **toutes les migrations** dans `prisma/migrations/`. Sur une **base neuve**, aucune migration supplémentaire n’est nécessaire tant que le schéma Prisma n’a pas changé par rapport à ce dépôt.
 
 1. Configure sur Vercel `DATABASE_URL` (+ `DIRECT_URL` si pooler) vers la nouvelle base.
-2. Déploie : le build exécute **`prisma migrate deploy`**, ce qui crée toutes les tables et contraintes à jour.
-3. **Remplis les données de base** (programmes, comptes démo, etc.) avec une exécution du seed sur cette base (depuis ton PC ou une CI), par exemple :
+2. Déploie : le build exécute **`prisma migrate deploy`**, puis **`prisma db seed` automatiquement** si la table des programmes est encore vide (premier déploiement sur cette base).
+3. **Optionnel** : si tu as défini `STUDELIO_SKIP_DB_BOOTSTRAP=1` sur Vercel, remplis la base à la main :
    ```powershell
    $env:DATABASE_URL = "postgresql://..."   # nouvelle Neon
    $env:DIRECT_URL = "postgresql://..."   # souvent identique si URL directe
@@ -117,7 +116,7 @@ La **version publiée** de l’app pour le suivi des déploiements est le champ 
 | **P1002** / timeout **advisory lock** (`pg_advisory_lock`) au build | Tu utilises l’URL **poolée** seule : ajoute `DIRECT_URL` = URL **directe** Neon (dashboard → *Connection details* → *Direct*). Ne pas s’appuyer sur le pooler pour les migrations. |
 | `Environment variable not found: DIRECT_URL` en local | Ajoute dans `.env` une ligne `DIRECT_URL="…"` identique à `DATABASE_URL` (voir `.env.example`). Obligatoire pour `prisma migrate dev` / `prisma validate` ; `prisma generate` et `npm run build` peuvent passer sans. |
 | Connexion / OAuth bizarre | `AUTH_URL` / `NEXTAUTH_URL` doivent correspondre à l’URL réelle du site (https, sans slash final selon les cas). |
-| Compte démo introuvable | Lance `npx prisma db seed` une fois avec la `DATABASE_URL` de la base (le build ne seed plus automatiquement). |
+| Compte démo introuvable | Vérifie les logs de build : `[studelio-bootstrap]` doit avoir lancé le seed si la base était vide. Sinon lance `npx prisma db seed` manuellement. Si `STUDELIO_SKIP_DB_BOOTSTRAP=1`, le seed auto est désactivé. |
 
 ---
 
