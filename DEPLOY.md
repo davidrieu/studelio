@@ -83,6 +83,24 @@ npx prisma db seed
 
 ---
 
+## 5bis. Nouvelle base PostgreSQL (ex. autre projet Neon, base vide)
+
+Le dépôt contient déjà **toutes les migrations** dans `prisma/migrations/`. Sur une **base neuve**, aucune migration supplémentaire n’est nécessaire tant que le schéma Prisma n’a pas changé par rapport à ce dépôt.
+
+1. Configure sur Vercel `DATABASE_URL` (+ `DIRECT_URL` si pooler) vers la nouvelle base.
+2. Déploie : le build exécute **`prisma migrate deploy`**, ce qui crée toutes les tables et contraintes à jour.
+3. **Remplis les données de base** (programmes, comptes démo, etc.) avec une exécution du seed sur cette base (depuis ton PC ou une CI), par exemple :
+   ```powershell
+   $env:DATABASE_URL = "postgresql://..."   # nouvelle Neon
+   $env:DIRECT_URL = "postgresql://..."   # souvent identique si URL directe
+   npx prisma db seed
+   ```
+4. Vérifie les comptes démo / admin selon ton `prisma/seed.ts`.
+
+La **version publiée** de l’app pour le suivi des déploiements est le champ **`version`** dans `package.json` (semver).
+
+---
+
 ## 6. Après un changement de schéma Prisma
 
 1. En local : `npx prisma migrate dev --name description_du_changement`
